@@ -1,0 +1,37 @@
+---
+title: "Entrega trabajo final modelos lineales"
+format: pdf
+author: "Lucca Frachelle , Valentina Solidni , Cecilia Waksman"
+date: "Sys.Date()"
+editor: visual
+---
+
+
+# Carga de datos y librerias
+
+```{r}
+#| output: TRUE
+library(readxl)
+library(tidyverse)
+library(GGally)
+
+```
+
+
+```{r}
+df = read_excel('./data/datos_presion.xlsx')
+```
+
+# Análisis exploratorio
+
+```{r}
+ggpairs(df)
+```
+
+```{r}
+mod = lm(presion_art ~ ., data = df)
+summary(mod)
+```
+
+
+
