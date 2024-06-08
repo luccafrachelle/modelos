@@ -1,0 +1,201 @@
+---
+title: "Entrega"
+format: pdf
+editor: visual
+---
+
+Posibles preguntas que nos podriamos hacer: (No todas las preguntas pueden estar bien del todo, solo son ideas como para guiarnos y poder comenzar a trabajar en algo)
+
+- Que variable explicativa, explica mejor a la variable de respuesta (presion arterial)?
+- Hya algunas variables que estan de mas en el modelo, o todas explican correctamente la presion arterial?
+- La presion arterial de las perosnas varia segun la edad de las personas?
+- Hay alguna variable en conjunto que explique a la presion arterial?
+- Son todas las variables explicativas significativas?
+
+residuos vs predichos
+```{r}
+library(readxl)
+datos <- read_excel("datos_presion.xlsx")
+```
+```{r}
+mod <- lm(presion_art ~ edad + peso + sup_corp + duracion_hip + pulso + stress,
+          data = datos)
+```
+En un primer momento vemos que la edad, la superfici corporal,  el pulso y el stress tienen una relacion positiva con la presion arterial. Mientras que el peso y la duracion_hip tiene una relacion negariva.
+
+Diagnostico - Homoscedasticidad:
+
+```{r}
+datos$r_i <- residuals(mod)  
+datos$s_i <- rstandard(mod)  #Los residuos studentizados internamente
+datos$t_i <- rstudent(mod)   #Los residuos studentizados externamente
+```
+
+```{r}
+library(ggplot2)
+datos$pred <- fitted(mod)
+```
+
+```{r}
+ggplot(datos, aes(x = pred, y = t_i)) + 
+  geom_point() +
+  xlab('Predichos') +
+  ylab('Residuos') +
+  geom_abline(slope = 0, intercept = 0)
+```
+
+Otra forma:
+```{r}
+res <- rstudent(mod)
+yhat <- fitted(mod)
+
+library(ggplot2)
+ggplot(mod, aes(x=yhat, y= res))+
+  geom_point()
+```
+Cada variable del modelo, viendo si cumple con los supuestros de Homoscedasticidad
+
+```{r}
+ggplot(datos, aes(x = edad, y = t_i)) + 
+  geom_point() +
+  xlab('Edad') +
+  ylab('Residuos') +
+  geom_abline(slope = 0, intercept = 0)
+```
+```{r}
+ggplot(datos, aes(x = peso, y = t_i)) + 
+  geom_point() +
+  xlab('Peso') +
+  ylab('Residuos')+
+  geom_abline(slope = 0, intercept = 0)
+```
+
+```{r}
+ggplot(datos, aes(x = sup_corp, y = t_i)) + 
+  geom_point() +
+  xlab('Superficie Coorporal') +
+  ylab('Residuos')+
+  geom_abline(slope = 0, intercept = 0)
+```
+
+```{r}
+ggplot(datos, aes(x = duracion_hip, y = t_i)) + 
+  geom_point() +
+  xlab('Duracion de la hipertencion') +
+  ylab('Residuos')+
+  geom_abline(slope = 0, intercept = 0)
+```
+
+```{r}
+ggplot(datos, aes(x = pulso, y = t_i)) + 
+  geom_point() +
+  xlab('Pulsaciones') +
+  ylab('Residuos')+
+  geom_abline(slope = 0, intercept = 0)
+```
+```{r}
+ggplot(datos, aes(x = stress, y = t_i)) + 
+  geom_point() +
+  xlab('Stress') +
+  ylab('Residuos')+
+  geom_abline(slope = 0, intercept = 0)
+```
+Ninguno de los graficos tiene forma de embudo mostrando heterocedasticidad, pero si se ve que estan muy dispersos por todo el grafico, en algunos graficos se muestra como que en el centro de la recta se examnden. Tendriamos que ver cuales son esos valores atipicos.
+
+Calculando el valor p:
+
+```{r}
+datos$r2_i <- datos$r_i^2
+mod_aux <- lm(r2_i ~ edad + peso + sup_corp + duracion_hip + pulso + stress,
+          data = datos)
+```
+
+```{r}
+n <- nrow(mod_aux$model)
+R2 <- summary(mod_aux)$r.squared
+BP <- n*R2
+
+# el p-valor es:
+1 - pchisq(BP, length(coef(mod_aux)) - 1)
+```
+Ya que el p valor es muy alto no se rechaza la hipotesis nula, low reciduos parecen tener varianza constante, lo que sugiere que no hay problema de heterocedasticidad en el modelo.
+
+
+Una manera mas facil:
+```{r}
+library(skedastic)
+
+homo <- breusch_pagan(mod)
+```
+```{r}
+vif(mod)
+```
+
+Ninguna de las variables sobrepasa un VIF de 10, pero el peso y sup_corp estan por arriba de 5. Tendremos que tener en cuenta esas variables.
+
+
+Normailidad:
+```{r}
+plot(density(res))
+```
+
+Tiene la forma pero a lo mejor se puede llegar a quitar.
+
+
+Linealidad:
+edad + peso + sup_corp + duracion_hip + pulso + stress
+```{r}
+crPlot(mod, "edad")
+```
+
+```{r}
+crPlot(mod, "peso")
+```
+```{r}
+crPlot(mod, "sup_corp")
+```
+```{r}
+crPlot(mod, "duracion_hip")
+```
+```{r}
+crPlot(mod, "pulso")
+```
+```{r}
+crPlot(mod, "stress")
+```
+
+
+Datos influyentes:
+
+
+```{r}
+h_i <- influence(mod)$hat
+D_i <- cooks.distance(mod)
+df <- data.frame(i = 1:nrow(datos),
+                 h_i = h_i,
+                 D_i = D_i)
+```
+
+
+```{r}
+library(ggplot2)
+
+ggplot(df, aes(x = i, y = h_i)) +
+  geom_point() +
+  geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
+  xlab('') +
+  ylab(expression(h[i])) +
+  geom_abline(slope = 0, intercept = 2*5/50, col = 2, linetype = 'dashed')
+```
+
+No hay casi ninguna observasion influyente la que podria ser seria la observacion 73
+
+
+```{r}
+influ <- influence(mod)$coefficients[c(73),]
+betas <- rbind(coef(mod), influ)
+```
+
+```{r}
+mod2 <- update(mod, data = datos[-c(73),])
+```
