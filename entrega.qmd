@@ -5,9 +5,31 @@ author: "Lucca Frachelle , Valentina Solidni , Cecilia Waksman"
 date: "Sys.Date()"
 editor: visual
 ---
+# Introducción
+
+Este trabajo consiste en un análisis de la incidencia de ciertos factores sobre la presión sanguínea en personas hipertensas. Los factores que se tomarán en cuenta para ello son: edad, peso, superficie corporal, duración desde que a la persona le diagnosticaron hipertensión, el pulso en estado basal y un índice de estrés.
+
+Para ello se utilizarán datos de un estudio realizado en una policlínica universitaria y se realizará un modelo de regresión lineal múltiple, dónde la variable de respuesta, Y, es la presión arterial (*presion_art*) y las variables explicativas serán seleccionadas de las nombradas anteriormente (las cuales formarán la matriz X). 
+
+El modelo se podrá escribir como $Y=X\beta + \epsilon$, donde $\beta$ es un vector de parámetros a estimar.
+
+# Supuestos a cumplir
+
+Para poder obtener conclusiones confiables, el modelo debe cumplir con determinados supuestos
+
+- no multicolinealidad: exacta ni aproximada, para asegurar que la matriz X sea de rango completo (conformable),
+
+- linealidad: la relación entre variables expicativas y la respuesta debe ser aproximadamente lineal,
+
+- homoscedasticidad: la varianza de los errores no depende de ninguna de las variables explicativas,
+
+- normalidad: los errores del modelo deben presentar una distribución normal,
+
+- atípicos/influyentes: si bien no es un supuesto en si mismo, es recomendable identificar observaciones atípicas e influyentes al modelo.
 
 
-# Carga de datos y librerias
+
+# Librerias
 
 ```{r}
 #| output: TRUE
@@ -17,8 +39,8 @@ library(GGally)
 library(car)
 library(skedastic)
 library(robustbase)
+library(tseries)
 ```
-
 
 ```{r}
 df = read_excel('./data/datos_presion.xlsx')
@@ -28,97 +50,133 @@ df <- df %>% dplyr::select(-id)
 # Análisis exploratorio
 
 ```{r}
+summary(df)
+```
+
+```{r}
 ggpairs(df)
 ```
 
 ```{r}
-summary(df)
-```
-
-
-
-
-```{r}
 mod = lm(presion_art ~ ., data = df)
 ```
+
 ## Diagnostico del modelo
 
 ## Multicolinealidad
+
 ```{r}
 vif(mod)
 ```
+
 Se elimina la variable peso que tiene un el VIF mas alto
 
 ```{r}
 mod = update(mod, . ~ . - peso)
+summary(mod)
 ```
 
 ```{r}
 vif(mod)
 ```
-Todos los VIF son con diferencia menoroes a 5, por lo que no hay multicolinealidad. Se puede seguir con el analisis.
-Si observamos en el analisis multivariado , la variable peso y superficie corporal tienen una correlacion muy alto, por lo que tiene sentido multicolineanidad en el modelo.
+
+Todos los VIF son con diferencia menoroes a 5, por lo que no hay multicolinealidad. Se puede seguir con el analisis. Si observamos en el analisis multivariado , la variable peso y superficie corporal tienen una correlacion muy alto, por lo que tiene sentido multicolineanidad en el modelo.
 
 ## Lineanidad
+
 ```{r}
 crPlots(mod)
 ```
+
 Parece no haber problemas de linealidad en el modelo. Ya que los residuos no presentan un patron claro , como dispersión o curvatura a lo largo de los valores de x. Quizas puede llegar a dar problemas la eadad linealindad. Se va a seguir con el analisis sin modificarla esperando que no sea un problema.
 
-## Homocedasticidad
+## Homoscedasticidad
+
+```{r}
+res <- rstudent(mod)
+yhat <- fitted(mod)
+
+library(ggplot2)
+ggplot(mod, aes(x=yhat, y= res))+
+  geom_point()
+```
+
 ```{r}
 ncvTest(mod)
+```
+
+```{r}
 breusch_pagan(mod)
 ```
+
 Los dos test tienen un p-value mayor a 0.7 por lo que no se rechaza la hipotesis nula. Es decir, no hay evidencia para probar que la varianza de los errores no son iguals. Por ende no hay problemas de homocedasticidad.
 
 ## Normalidad de los residuos
+
 ```{r}
-shapiro.test(residuals(mod))
-tseries::jarque.bera.test(rstudent(mod))
-ks.test(rstudent(mod), 'pnorm')
+plot(density(rstudent(mod)))
 ```
-El test Jarque-Bera tiene un p-value menor que  0.05, por lo que se rechaza la hipotesis nula de que los residuos son normales. Sin embargo, el test de Shapiro-Wilk y el test de Kolmogorov-Smirnov no rechazan la hipotesis nula. Por lo que no se puede afirmar que los residuos no son normales. Se va a intervenir el modelo para ver si se puede mejorar la normalidad de los residuos.
-Como se menciono anteriormente la variable edad puede no ser lineal, por lo que se va a transformar la variable edad para ver si se puede mejorar la normalidad de los residuos.
+
+
+```{r}
+n <- nrow(df)
+z_i <- qnorm(seq(n)/(n + 1))
+qq <- data.frame(teoricos = z_i,
+                 empiricos = sort(rstudent(mod)))
+library(ggplot2)
+ggplot(qq, aes(x = teoricos, y = empiricos)) +
+  geom_point() +
+  xlab('Cuantiles teoricos') +
+  ylab('Cuantiles empiricos') +
+  geom_abline(slope = 1, intercept = 0, col = 2, size = 1.5)#comparación entre disrtib de los datos y disstrib normal
+
+```
+
+```{r}
+shapiro.test(rstudent(mod))
+jarque.bera.test(rstudent(mod))#rechazo al 5
+ks.test(rstudent(mod), 'pnorm')
+
+```
+
+El test Jarque-Bera tiene un p-value menor que 0.05, por lo que se rechaza la hipotesis nula de que los residuos son normales. Sin embargo, el test de Shapiro-Wilk y el test de Kolmogorov-Smirnov no rechazan la hipotesis nula. Por lo que no se puede afirmar que los residuos no son normales. Se va a intervenir el modelo para ver si se puede mejorar la normalidad de los residuos. Como se menciono anteriormente la variable edad puede no ser lineal, por lo que se va a transformar la variable edad para ver si se puede mejorar la normalidad de los residuos.
 
 
 ## Tranformacion de la variable edad
 
 ### Transofrmacion logaritmica
+
 ```{r}
-df$log_edad <- log(df$edad)
-mod_log_edad = lm(presion_art ~ ., data = df)
-mod_log_edad = update(mod_log_edad, . ~ . - peso)
+# df$log_edad <- log(df$edad)
+# mod_log_edad = lm(presion_art ~ .- peso - edad, data = df)
+# no funciona aplicando logaritmo. SIgue con problemas de normalidad y significación individual
 ```
 
 ```{r}
-shapiro.test(residuals(mod_log_edad))
-tseries::jarque.bera.test(rstudent(mod_log_edad))
-ks.test(rstudent(mod_log_edad), 'pnorm')
+# shapiro.test(residuals(mod_log_edad))
+# jarque.bera.test(rstudent(mod_log_edad))
+# ks.test(rstudent(mod_log_edad), 'pnorm')
 
 ```
-
-
-
 
 ```{r}
-df$sqrt_edad <- sqrt(df$edad)
-mod_sqrt_edad = lm(presion_art ~ ., data = df)
-mod_sqrt_edad = update(mod_sqrt_edad, . ~ . - log_edad , . ~ . - peso)
+# df$sqrt_edad <- sqrt(df$edad)
+# mod_sqrt_edad = lm(presion_art ~ .- peso - edad, data = df)
 ```
-
 
 ```{r}
-shapiro.test(residuals(mod_sqrt_edad))
-tseries::jarque.bera.test(rstudent(mod_sqrt_edad))
-ks.test(rstudent(mod_sqrt_edad), 'pnorm')
+# shapiro.test(residuals(mod_sqrt_edad))
+# jarque.bera.test(rstudent(mod_sqrt_edad))
+# ks.test(rstudent(mod_sqrt_edad), 'pnorm')
 
 ```
+
 Las dos transformaciones no tienen problemas de normalidad en los residuos. Se va a elegir la transformacion de la raiz queadrada ya que tiene un p-value mayor en el test de Jarque-Bera.
 
 ## Presencia de atipicos
+
 ```{r}
-h_i <- influence(mod_sqrt_edad)$hat
+h_i <- influence(mod)$hat
 D_i <- cooks.distance(mod)
 df_influencia <- data.frame(i = 1:nrow(df),
                             h_i = h_i,
@@ -134,6 +192,7 @@ ggplot(df_influencia, aes(x = i, y = h_i)) +
   geom_abline(slope = 0, intercept = 2*length(coefficients(mod))/nrow(df), col = 2, linetype = 'dashed') +
   ggtitle('Leverage')
 ```
+
 ```{r}
 ggplot(df_influencia, aes(x = i, y = D_i)) +
   geom_point() +
@@ -144,23 +203,127 @@ ggplot(df_influencia, aes(x = i, y = D_i)) +
   ggtitle('Distancia de Cook')
 
 ```
+
+Intervención de influyentes según Levrage
+```{r}
+df$I38 <- 0
+df$I38[38] <- 1
+df$I73 <- 0
+df$I73[73] <- 1
+mod_I <- lm(presion_art ~ . -peso, data = df)
+vif(mod_I)
+#obs 58 es influyente en ambos gráficos pero aceptamos normalidad si lo quitamos
+```
+
+```{r}
+crPlots(mod_I)
+```
+
+```{r}
+ncvTest(mod_I)
+breusch_pagan(mod_I)
+```
+
+```{r}
+shapiro.test(rstudent(mod_I))
+jarque.bera.test(na.omit(rstudent(mod_I)))
+ks.test(rstudent(mod_I), 'pnorm')
+
+```
+
+Interviención de influyentes según distancia de Cook
+
+```{r}
+df$I62 <- 0
+df$I62[62] <- 1
+mod_II <- lm(presion_art ~ . -peso -I38 -I73, data = df)
+vif(mod_II)
+# si se borra intervención de influyentes de Leverage, debemos actualizar nuestro modelo borradno "-I38 -I73".
+```
+
+```{r}
+crPlots(mod_II)
+```
+
+```{r}
+ncvTest(mod_II)
+```
+
+```{r}
+breusch_pagan(mod_II)
+```
+
+```{r}
+shapiro.test(rstudent(mod_II))
+jarque.bera.test(na.omit(rstudent(mod_II)))
+ks.test(rstudent(mod_II), 'pnorm')
+```
+Influyentes/Atípicos
+Es necesario evaluar esta parte si los demás supuestos se cumplen?
+
+```{r}
+h_i <- influence(mod)$hat
+D_i <- cooks.distance(mod)
+df_influencia <- data.frame(i = 1:nrow(df),
+                            h_i = h_i,
+                            D_i = D_i)
+```
+
+```{r}
+ggplot(df_influencia, aes(x = i, y = h_i)) +
+  geom_point() +
+  geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
+  xlab('') +
+  ylab(expression(h[i])) +
+  geom_abline(slope = 0, intercept = 2*length(coefficients(mod))/nrow(df), col = 2, linetype = 'dashed') +
+  ggtitle('Leverage')
+```
+
+```{r}
+ggplot(df_influencia, aes(x = i, y = D_i)) +
+  geom_point() +
+  geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
+  xlab('') +
+  ylab(expression(D[i])) +
+  geom_abline(slope = 0, intercept = 4/nrow(df), col = 2, linetype = 'dashed') +
+  ggtitle('Distancia de Cook')
+
+```
+
+Tests de significación individual y global
+```{r}
+summary(mod_II)
+# Intervención significativa
+# duracion_hip y stress son no significativas
+```
+
+Modelo sin variables no significativas
+
+```{r}
+mod = update(mod_II, . ~ . - peso - stress -duracion_hip)
+#modelo sin stress y/o duracion_hip no acepta normalidad
+```
+
+
+
+
+
+
+
 ```{r}
 influyentes <- df_influencia %>%
   filter(D_i > 4 / nrow(df)) %>% arrange(desc(D_i)) %>% head(1)
 ```
-Se interviene el modelo poniendo indicatrices para las obs
 
-```{r}
-df$influyente <- 0
-df$influyente[influyentes$i] <- 1
-```
 Se evalua el modelo intervenido
+
 ```{r}
 mod_intervenido = lm(presion_art ~ . + influyente, data = df)
 mod_intervenido = update(mod_intervenido, . ~ . - peso , . ~ . - log_edad , . ~ . - edad)
 ```
 
 Se analiza la influencia de atipicos en el modelo intervenido
+
 ```{r}
 h_i <- influence(mod_intervenido)$hat
 D_i <- cooks.distance(mod_intervenido)
@@ -178,6 +341,7 @@ ggplot(df_influencia, aes(x = i, y = h_i)) +
   geom_abline(slope = 0, intercept = 2*length(coefficients(mod_intervenido))/nrow(df), col = 2, linetype = 'dashed') +
   ggtitle('Leverage')
 ```
+
 ```{r}
 ggplot(df_influencia, aes(x = i, y = D_i)) +
   geom_point() +
@@ -192,9 +356,11 @@ ggplot(df_influencia, aes(x = i, y = D_i)) +
 Se observa que el atipico influye bastante. Por mas de que siguen habiendo mas atipicos en el modelo, se decide seguir con el analisis ya que no se observa que influyan tanto como el atipico que se intervino
 
 ## Resultados del modelo final
+
 ```{r}
 mod_intervenido %>% summary()
 ```
+
 Viendo el resultado del summary , que tiene como unica variable super siginificativa a la variable superficie corporal. Se explora un modelo lineal simple con la variable superficie corporal.
 
 ```{r}
@@ -204,7 +370,8 @@ mod_simple = lm(presion_art ~ sup_corp, data = df)
 ```{r}
 mod_simple %>% summary()
 ```
-Se pierde un 13% de la varianza explicada, pero se obtiene un modelo mas simple y con una variable significativa. Se va a analizar 
+
+Se pierde un 13% de la varianza explicada, pero se obtiene un modelo mas simple y con una variable significativa. Se va a analizar
+
 ```{r}
 ```
-
