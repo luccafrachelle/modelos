@@ -1,0 +1,331 @@
+---
+title: "Entrega trabajo final modelos lineales"
+format: pdf
+author: "Lucca Frachelle , Valentina Solidni , Cecilia Waksman"
+date: "Sys.Date()"
+editor: visual
+---
+
+# Introducción
+
+Este trabajo consiste en un análisis de la incidencia de ciertos factores sobre la presión sanguínea en personas hipertensas. Los factores que se tomarán en cuenta para ello son: edad, peso, superficie corporal, duración desde que a la persona le diagnosticaron hipertensión, el pulso en estado basal y un índice de estrés.
+
+Para ello se utilizarán datos de un estudio realizado en una policlínica universitaria y se realizará un modelo de regresión lineal múltiple, dónde la variable de respuesta, Y, es la presión arterial (*presion_art*) y las variables explicativas serán seleccionadas de las nombradas anteriormente (las cuales formarán la matriz X).
+
+El modelo se podrá escribir como $Y=X\beta + \epsilon$, donde $\beta$ es un vector de parámetros a estimar.
+
+# Supuestos a cumplir
+
+Para poder obtener conclusiones confiables, el modelo debe cumplir con determinados supuestos
+
+-   no multicolinealidad: exacta ni aproximada, para asegurar que la matriz X sea de rango completo (conformable),
+
+-   linealidad: la relación entre variables expicativas y la respuesta debe ser aproximadamente lineal,
+
+-   homoscedasticidad: la varianza de los errores no depende de ninguna de las variables explicativas,
+
+-   normalidad: los errores del modelo deben presentar una distribución normal,
+
+-   atípicos/influyentes: si bien no es un supuesto en si mismo, es recomendable identificar observaciones atípicas e influyentes al modelo.
+
+# Librerias
+
+```{r}
+#| output: TRUE
+library(readxl)
+library(tidyverse)
+library(GGally)
+library(car)
+library(skedastic)
+library(robustbase)
+library(tseries)
+```
+
+```{r}
+df = read_excel('./data/datos_presion.xlsx')
+df <- df %>% dplyr::select(-id)
+```
+
+# Análisis exploratorio
+
+```{r}
+summary(df)
+```
+
+```{r}
+ggpairs(df)
+```
+
+```{r}
+mod = lm(presion_art ~ ., data = df)
+```
+
+## Diagnostico del modelo
+
+## Multicolinealidad
+
+```{r}
+vif(mod)
+```
+
+Se elimina la variable peso que tiene un el VIF mas alto
+
+```{r}
+mod = update(mod, . ~ . - peso)
+summary(mod)
+```
+
+```{r}
+vif(mod)
+```
+
+Todos los VIF son con diferencia menoroes a 5, por lo que no hay multicolinealidad. Se puede seguir con el analisis. Si observamos en el analisis multivariado , la variable peso y superficie corporal tienen una correlacion muy alto, por lo que tiene sentido multicolineanidad en el modelo.
+
+## Lineanidad
+
+```{r}
+crPlots(mod)
+```
+
+Parece no haber problemas de linealidad en el modelo. Ya que los residuos no presentan un patron claro , como dispersión o curvatura a lo largo de los valores de x. Quizas puede llegar a dar problemas la eadad linealindad. Se va a seguir con el analisis sin modificarla esperando que no sea un problema.
+
+## Homoscedasticidad
+
+```{r}
+res <- rstudent(mod)
+yhat <- fitted(mod)
+
+library(ggplot2)
+ggplot(mod, aes(x=yhat, y= res))+
+  geom_point()#falta franja -3, 3
+```
+
+```{r}
+ncvTest(mod)
+```
+
+```{r}
+breusch_pagan(mod)
+```
+
+Los dos test tienen un p-value mayor a 0.7 por lo que no se rechaza la hipotesis nula. Es decir, no hay evidencia para probar que la varianza de los errores no son iguals. Por ende no hay problemas de homocedasticidad.
+
+## Normalidad de los residuos
+
+```{r}
+plot(density(rstudent(mod)))
+```
+
+```{r}
+n <- nrow(df)
+z_i <- qnorm(seq(n)/(n + 1))
+qq <- data.frame(teoricos = z_i,
+                 empiricos = sort(rstudent(mod)))
+library(ggplot2)
+ggplot(qq, aes(x = teoricos, y = empiricos)) +
+  geom_point() +
+  xlab('Cuantiles teoricos') +
+  ylab('Cuantiles empiricos') +
+  geom_abline(slope = 1, intercept = 0, col = 2, size = 1.5)#comparación entre disrtib de los datos y distrib normal
+
+```
+
+```{r}
+shapiro.test(rstudent(mod))
+jarque.bera.test(rstudent(mod))#rechazo al 5
+ks.test(rstudent(mod), 'pnorm')
+
+```
+
+El test Jarque-Bera tiene un p-value menor que 0.05, por lo que se rechaza la hipotesis nula de que los residuos son normales. Sin embargo, el test de Shapiro-Wilk y el test de Kolmogorov-Smirnov no rechazan la hipotesis nula. Por lo que no se puede afirmar que los residuos no son normales. Se va a intervenir el modelo para ver si se puede mejorar la normalidad de los residuos. Como se menciono anteriormente la variable edad puede no ser lineal, por lo que se va a transformar la variable edad para ver si se puede mejorar la normalidad de los residuos.
+
+
+## Presencia de Influyentes
+
+```{r}
+h_i <- influence(mod)$hat
+D_i <- cooks.distance(mod)
+df_influencia <- data.frame(i = 1:nrow(df),
+                            h_i = h_i,
+                            D_i = D_i)
+```
+
+```{r}
+ggplot(df_influencia, aes(x = i, y = h_i)) +
+  geom_point() +
+  geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
+  xlab('') +
+  ylab(expression(h[i])) +
+  geom_abline(slope = 0, intercept = 2*length(coefficients(mod))/nrow(df), col = 2, linetype = 'dashed') +
+  ggtitle('Leverage')
+```
+
+```{r}
+ggplot(df_influencia, aes(x = i, y = D_i)) +
+  geom_point() +
+  geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
+  xlab('') +
+  ylab(expression(D[i])) +
+  geom_abline(slope = 0, intercept = 4/nrow(df), col = 2, linetype = 'dashed') +
+  ggtitle('Distancia de Cook')
+
+```
+
+Intervención de influyentes según Levrage
+
+```{r}
+df$I38 <- 0
+df$I38[38] <- 1
+df$I73 <- 0
+df$I73[73] <- 1
+mod_I <- lm(presion_art ~ . -peso, data = df)
+vif(mod_I)
+#obs 58 es influyente en ambos gráficos pero aceptamos normalidad si lo quitamos
+```
+
+```{r}
+crPlots(mod_I)
+```
+
+```{r}
+ncvTest(mod_I)
+breusch_pagan(mod_I)
+```
+
+```{r}
+shapiro.test(rstudent(mod_I))
+jarque.bera.test(na.omit(rstudent(mod_I)))
+ks.test(rstudent(mod_I), 'pnorm')
+
+```
+
+Interviención de influyentes según distancia de Cook
+
+```{r}
+df$I62 <- 0
+df$I62[62] <- 1
+mod_II <- lm(presion_art ~ . -peso -I38 -I73, data = df)
+vif(mod_II)
+# si se borra intervención de influyentes de Leverage, debemos actualizar nuestro modelo borradno "-I38 -I73".
+```
+
+```{r}
+crPlots(mod_II)
+```
+
+```{r}
+ncvTest(mod_II)
+```
+
+```{r}
+breusch_pagan(mod_II)
+```
+
+```{r}
+shapiro.test(rstudent(mod_II))
+jarque.bera.test(na.omit(rstudent(mod_II)))
+ks.test(rstudent(mod_II), 'pnorm')
+```
+
+Influyentes
+
+```{r}
+h_i <- influence(mod_II)$hat
+D_i <- cooks.distance(mod_II)
+df_influencia <- data.frame(i = 1:nrow(df),
+                            h_i = h_i,
+                            D_i = D_i)
+```
+
+```{r}
+ggplot(df_influencia, aes(x = i, y = h_i)) +
+  geom_point() +
+  geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
+  xlab('') +
+  ylab(expression(h[i])) +
+  geom_abline(slope = 0, intercept = 2*length(coefficients(mod))/nrow(df), col = 2, linetype = 'dashed') +
+  ggtitle('Leverage')
+```
+
+```{r}
+ggplot(df_influencia, aes(x = i, y = D_i)) +
+  geom_point() +
+  geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
+  xlab('') +
+  ylab(expression(D[i])) +
+  geom_abline(slope = 0, intercept = 4/nrow(df), col = 2, linetype = 'dashed') +
+  ggtitle('Distancia de Cook')
+
+```
+
+Tests de significación individual y global
+
+```{r}
+summary(mod_II)
+# Intervención significativa
+# duracion_hip y stress son no significativas
+```
+
+Modelo sin variables no significativas
+
+```{r}
+mod = update(mod_II, . ~ . - peso - stress -duracion_hip)
+#modelo sin stress y/o duracion_hip no acepta normalidad
+```
+
+```{r}
+influyentes <- df_influencia %>%
+  filter(D_i > 4 / nrow(df)) %>% arrange(desc(D_i)) %>% head(1)
+```
+
+
+```{r}
+shapiro.test(rstudent(mod))
+jarque.bera.test(na.omit(rstudent(mod)))
+ks.test(rstudent(mod), 'pnorm')
+```
+
+Sin variables no significativas
+
+```{r}
+mod2 <- lm(presion_art~.-peso-stress-duracion_hip, data=df)
+vif(mod2)
+```
+
+```{r}
+h_i2 <- influence(mod2)$hat
+D_i2 <- cooks.distance(mod2)
+df_influencia2 <- data.frame(i = 1:nrow(df),
+                            h_i = h_i2,
+                            D_i = D_i2)
+```
+
+
+
+```{r}
+ggplot(df_influencia2, aes(x = i, y = h_i)) +
+  geom_point() +
+  geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
+  xlab('') +
+  ylab(expression(h[i])) +
+  geom_abline(slope = 0, intercept = 2*length(coefficients(mod2))/nrow(df), col = 2, linetype = 'dashed') +
+  ggtitle('Leverage')
+```
+
+```{r}
+ggplot(df_influencia2, aes(x = i, y = D_i)) +
+  geom_point() +
+  geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
+  xlab('') +
+  ylab(expression(D[i])) +
+  geom_abline(slope = 0, intercept = 4/nrow(df), col = 2, linetype = 'dashed') +
+  ggtitle('Distancia de Cook')
+```
+
+```{r}
+df_influencia2 %>% arrange(desc(D_i)) %>% head(5) %>% pull(i)
+```
+
+
+
+## Resultados del modelo final
