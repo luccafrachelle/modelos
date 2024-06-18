@@ -5,11 +5,12 @@ author: "Lucca Frachelle , Valentina Solidni , Cecilia Waksman"
 date: "Sys.Date()"
 editor: visual
 ---
+
 # Introducción
 
 Este trabajo consiste en un análisis de la incidencia de ciertos factores sobre la presión sanguínea en personas hipertensas. Los factores que se tomarán en cuenta para ello son: edad, peso, superficie corporal, duración desde que a la persona le diagnosticaron hipertensión, el pulso en estado basal y un índice de estrés.
 
-Para ello se utilizarán datos de un estudio realizado en una policlínica universitaria y se realizará un modelo de regresión lineal múltiple, dónde la variable de respuesta, Y, es la presión arterial (*presion_art*) y las variables explicativas serán seleccionadas de las nombradas anteriormente (las cuales formarán la matriz X). 
+Para ello se utilizarán datos de un estudio realizado en una policlínica universitaria y se realizará un modelo de regresión lineal múltiple, dónde la variable de respuesta, Y, es la presión arterial (*presion_art*) y las variables explicativas serán seleccionadas de las nombradas anteriormente (las cuales formarán la matriz X).
 
 El modelo se podrá escribir como $Y=X\beta + \epsilon$, donde $\beta$ es un vector de parámetros a estimar.
 
@@ -17,17 +18,15 @@ El modelo se podrá escribir como $Y=X\beta + \epsilon$, donde $\beta$ es un vec
 
 Para poder obtener conclusiones confiables, el modelo debe cumplir con determinados supuestos
 
-- no multicolinealidad: exacta ni aproximada, para asegurar que la matriz X sea de rango completo (conformable),
+-   no multicolinealidad: exacta ni aproximada, para asegurar que la matriz X sea de rango completo (conformable),
 
-- linealidad: la relación entre variables expicativas y la respuesta debe ser aproximadamente lineal,
+-   linealidad: la relación entre variables expicativas y la respuesta debe ser aproximadamente lineal,
 
-- homoscedasticidad: la varianza de los errores no depende de ninguna de las variables explicativas,
+-   homoscedasticidad: la varianza de los errores no depende de ninguna de las variables explicativas,
 
-- normalidad: los errores del modelo deben presentar una distribución normal,
+-   normalidad: los errores del modelo deben presentar una distribución normal,
 
-- atípicos/influyentes: si bien no es un supuesto en si mismo, es recomendable identificar observaciones atípicas e influyentes al modelo.
-
-
+-   atípicos/influyentes: si bien no es un supuesto en si mismo, es recomendable identificar observaciones atípicas e influyentes al modelo.
 
 # Librerias
 
@@ -98,7 +97,7 @@ yhat <- fitted(mod)
 
 library(ggplot2)
 ggplot(mod, aes(x=yhat, y= res))+
-  geom_point()
+  geom_point()#falta franja -3, 3
 ```
 
 ```{r}
@@ -117,7 +116,6 @@ Los dos test tienen un p-value mayor a 0.7 por lo que no se rechaza la hipotesis
 plot(density(rstudent(mod)))
 ```
 
-
 ```{r}
 n <- nrow(df)
 z_i <- qnorm(seq(n)/(n + 1))
@@ -128,7 +126,7 @@ ggplot(qq, aes(x = teoricos, y = empiricos)) +
   geom_point() +
   xlab('Cuantiles teoricos') +
   ylab('Cuantiles empiricos') +
-  geom_abline(slope = 1, intercept = 0, col = 2, size = 1.5)#comparación entre disrtib de los datos y disstrib normal
+  geom_abline(slope = 1, intercept = 0, col = 2, size = 1.5)#comparación entre disrtib de los datos y distrib normal
 
 ```
 
@@ -142,38 +140,7 @@ ks.test(rstudent(mod), 'pnorm')
 El test Jarque-Bera tiene un p-value menor que 0.05, por lo que se rechaza la hipotesis nula de que los residuos son normales. Sin embargo, el test de Shapiro-Wilk y el test de Kolmogorov-Smirnov no rechazan la hipotesis nula. Por lo que no se puede afirmar que los residuos no son normales. Se va a intervenir el modelo para ver si se puede mejorar la normalidad de los residuos. Como se menciono anteriormente la variable edad puede no ser lineal, por lo que se va a transformar la variable edad para ver si se puede mejorar la normalidad de los residuos.
 
 
-## Tranformacion de la variable edad
-
-### Transofrmacion logaritmica
-
-```{r}
-# df$log_edad <- log(df$edad)
-# mod_log_edad = lm(presion_art ~ .- peso - edad, data = df)
-# no funciona aplicando logaritmo. SIgue con problemas de normalidad y significación individual
-```
-
-```{r}
-# shapiro.test(residuals(mod_log_edad))
-# jarque.bera.test(rstudent(mod_log_edad))
-# ks.test(rstudent(mod_log_edad), 'pnorm')
-
-```
-
-```{r}
-# df$sqrt_edad <- sqrt(df$edad)
-# mod_sqrt_edad = lm(presion_art ~ .- peso - edad, data = df)
-```
-
-```{r}
-# shapiro.test(residuals(mod_sqrt_edad))
-# jarque.bera.test(rstudent(mod_sqrt_edad))
-# ks.test(rstudent(mod_sqrt_edad), 'pnorm')
-
-```
-
-Las dos transformaciones no tienen problemas de normalidad en los residuos. Se va a elegir la transformacion de la raiz queadrada ya que tiene un p-value mayor en el test de Jarque-Bera.
-
-## Presencia de atipicos
+## Presencia de Influyentes
 
 ```{r}
 h_i <- influence(mod)$hat
@@ -205,6 +172,7 @@ ggplot(df_influencia, aes(x = i, y = D_i)) +
 ```
 
 Intervención de influyentes según Levrage
+
 ```{r}
 df$I38 <- 0
 df$I38[38] <- 1
@@ -258,12 +226,12 @@ shapiro.test(rstudent(mod_II))
 jarque.bera.test(na.omit(rstudent(mod_II)))
 ks.test(rstudent(mod_II), 'pnorm')
 ```
-Influyentes/Atípicos
-Es necesario evaluar esta parte si los demás supuestos se cumplen?
+
+Influyentes
 
 ```{r}
-h_i <- influence(mod)$hat
-D_i <- cooks.distance(mod)
+h_i <- influence(mod_II)$hat
+D_i <- cooks.distance(mod_II)
 df_influencia <- data.frame(i = 1:nrow(df),
                             h_i = h_i,
                             D_i = D_i)
@@ -291,6 +259,7 @@ ggplot(df_influencia, aes(x = i, y = D_i)) +
 ```
 
 Tests de significación individual y global
+
 ```{r}
 summary(mod_II)
 # Intervención significativa
@@ -304,74 +273,59 @@ mod = update(mod_II, . ~ . - peso - stress -duracion_hip)
 #modelo sin stress y/o duracion_hip no acepta normalidad
 ```
 
-
-
-
-
-
-
 ```{r}
 influyentes <- df_influencia %>%
   filter(D_i > 4 / nrow(df)) %>% arrange(desc(D_i)) %>% head(1)
 ```
 
-Se evalua el modelo intervenido
 
 ```{r}
-mod_intervenido = lm(presion_art ~ . + influyente, data = df)
-mod_intervenido = update(mod_intervenido, . ~ . - peso , . ~ . - log_edad , . ~ . - edad)
+shapiro.test(rstudent(mod))
+jarque.bera.test(na.omit(rstudent(mod)))
+ks.test(rstudent(mod), 'pnorm')
 ```
 
-Se analiza la influencia de atipicos en el modelo intervenido
+Sin variables no significativas
 
 ```{r}
-h_i <- influence(mod_intervenido)$hat
-D_i <- cooks.distance(mod_intervenido)
-df_influencia <- data.frame(i = 1:nrow(df),
-                            h_i = h_i,
-                            D_i = D_i)
+mod2 <- lm(presion_art~.-peso-stress-duracion_hip, data=df)
+vif(mod2)
 ```
 
 ```{r}
-ggplot(df_influencia, aes(x = i, y = h_i)) +
+h_i2 <- influence(mod2)$hat
+D_i2 <- cooks.distance(mod2)
+df_influencia2 <- data.frame(i = 1:nrow(df),
+                            h_i = h_i2,
+                            D_i = D_i2)
+```
+
+
+
+```{r}
+ggplot(df_influencia2, aes(x = i, y = h_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
   xlab('') +
   ylab(expression(h[i])) +
-  geom_abline(slope = 0, intercept = 2*length(coefficients(mod_intervenido))/nrow(df), col = 2, linetype = 'dashed') +
+  geom_abline(slope = 0, intercept = 2*length(coefficients(mod2))/nrow(df), col = 2, linetype = 'dashed') +
   ggtitle('Leverage')
 ```
 
 ```{r}
-ggplot(df_influencia, aes(x = i, y = D_i)) +
+ggplot(df_influencia2, aes(x = i, y = D_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
   xlab('') +
   ylab(expression(D[i])) +
   geom_abline(slope = 0, intercept = 4/nrow(df), col = 2, linetype = 'dashed') +
   ggtitle('Distancia de Cook')
-
 ```
 
-Se observa que el atipico influye bastante. Por mas de que siguen habiendo mas atipicos en el modelo, se decide seguir con el analisis ya que no se observa que influyan tanto como el atipico que se intervino
+```{r}
+df_influencia2 %>% arrange(desc(D_i)) %>% head(5) %>% pull(i)
+```
+
+
 
 ## Resultados del modelo final
-
-```{r}
-mod_intervenido %>% summary()
-```
-
-Viendo el resultado del summary , que tiene como unica variable super siginificativa a la variable superficie corporal. Se explora un modelo lineal simple con la variable superficie corporal.
-
-```{r}
-mod_simple = lm(presion_art ~ sup_corp, data = df)
-```
-
-```{r}
-mod_simple %>% summary()
-```
-
-Se pierde un 13% de la varianza explicada, pero se obtiene un modelo mas simple y con una variable significativa. Se va a analizar
-
-```{r}
-```
