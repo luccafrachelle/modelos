@@ -91,13 +91,18 @@ Parece no haber problemas de linealidad en el modelo. Ya que los residuos no pre
 
 ## Homoscedasticidad
 
+Atípicos
 ```{r}
 res <- rstudent(mod)
 yhat <- fitted(mod)
 
+which(abs(res)>3)
+
 library(ggplot2)
 ggplot(mod, aes(x=yhat, y= res))+
-  geom_point()#falta franja -3, 3
+  geom_point()+
+  geom_hline(yintercept = -3,color="darkblue")+
+  geom_hline(yintercept = 3,color="darkblue")
 ```
 
 ```{r}
@@ -138,7 +143,6 @@ ks.test(rstudent(mod), 'pnorm')
 ```
 
 El test Jarque-Bera tiene un p-value menor que 0.05, por lo que se rechaza la hipotesis nula de que los residuos son normales. Sin embargo, el test de Shapiro-Wilk y el test de Kolmogorov-Smirnov no rechazan la hipotesis nula. Por lo que no se puede afirmar que los residuos no son normales. Se va a intervenir el modelo para ver si se puede mejorar la normalidad de los residuos. Como se menciono anteriormente la variable edad puede no ser lineal, por lo que se va a transformar la variable edad para ver si se puede mejorar la normalidad de los residuos.
-
 
 ## Presencia de Influyentes
 
@@ -278,7 +282,6 @@ influyentes <- df_influencia %>%
   filter(D_i > 4 / nrow(df)) %>% arrange(desc(D_i)) %>% head(1)
 ```
 
-
 ```{r}
 shapiro.test(rstudent(mod))
 jarque.bera.test(na.omit(rstudent(mod)))
@@ -293,14 +296,17 @@ vif(mod2)
 ```
 
 ```{r}
+summary(mod2)
+```
+
+
+```{r}
 h_i2 <- influence(mod2)$hat
 D_i2 <- cooks.distance(mod2)
 df_influencia2 <- data.frame(i = 1:nrow(df),
                             h_i = h_i2,
                             D_i = D_i2)
 ```
-
-
 
 ```{r}
 ggplot(df_influencia2, aes(x = i, y = h_i)) +
@@ -324,8 +330,82 @@ ggplot(df_influencia2, aes(x = i, y = D_i)) +
 
 ```{r}
 df_influencia2 %>% arrange(desc(D_i)) %>% head(5) %>% pull(i)
+df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
+```
+```{r}
+shapiro.test(rstudent(mod2))
+jarque.bera.test(na.omit(rstudent(mod2)))
+ks.test(rstudent(mod2), 'pnorm')
+```
+```{r}
+df = read_excel('./data/datos_presion.xlsx')
+df <- df %>% dplyr::select(-id)
+
+df$I62 <- 0
+df$I62[62] <- 1
+df$I41 <- 0
+df$I41[41] <- 1
+df$I22 <- 0
+df$I22[22] <- 1
+df$I38 <- 0
+df$I38[38] <- 1
+mod2 <- lm(presion_art ~ .-peso- stress -duracion_hip, data=df)
+#Se probó con obs.: 62,58, 41,22, 73,38, 61, 66
 ```
 
+Atípicos
+```{r}
+res <- rstudent(mod2)
+yhat <- fitted(mod2)
+
+which(abs(res)>3)
+
+library(ggplot2)
+ggplot(mod2, aes(x=yhat, y= res))+
+  geom_point()+
+  geom_hline(yintercept = -3,color="darkblue")+
+  geom_hline(yintercept = 3,color="darkblue")
+#Obs 62 
+```
+
+```{r}
+shapiro.test(rstudent(mod2))
+jarque.bera.test(na.omit(rstudent(mod2)))
+ks.test(rstudent(mod2), 'pnorm')
+```
+```{r}
+summary(mod2)#I38 no significativo, pero sin ella no acepto normalidad
+```
+
+
+Probamos con log(y)
+```{r}
+# df$I62 <- 0
+# df$I62[62] <- 1
+# df$I41 <- 0
+# df$I41[41] <- 1
+# df$I22 <- 0
+# df$I22[22] <- 1
+# df$I38 <- 0
+# df$I38[38] <- 1
+mod3 <- lm(log(presion_art) ~ .-peso- stress -duracion_hip, data=df)
+```
+
+```{r}
+shapiro.test(rstudent(mod3))
+jarque.bera.test(na.omit(rstudent(mod3)))
+ks.test(rstudent(mod3), 'pnorm')#no acepta normalidad
+```
+
+Quitando obs atípica 62
+
+```{r}
+df <- df[-62,]
+mod_sin62 <- lm(presion_art ~ .-peso- stress -duracion_hip, data=df)
+shapiro.test(rstudent(mod_sin62))
+jarque.bera.test(na.omit(rstudent(mod_sin62)))
+ks.test(rstudent(mod_sin62), 'pnorm')#no acepta normalidad
+```
 
 
 ## Resultados del modelo final
