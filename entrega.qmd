@@ -67,7 +67,7 @@ mod = lm(presion_art ~ ., data = df)
 ```{r}
 vif(mod)
 ```
-
+Se observa que al hacer el vif la variable que tenía un valor mas alto indicando una alta multicolinealidad era la variable "peso", por esta razón fue que se descidio eliminarla del modelo.
 Se elimina la variable peso que tiene un el VIF mas alto
 
 ```{r}
@@ -231,6 +231,8 @@ shapiro.test(rstudent(mod_II))
 jarque.bera.test(na.omit(rstudent(mod_II)))
 ks.test(rstudent(mod_II), 'pnorm')
 ```
+
+Una vez habiendo sacado los datos 38, 73, la variable peso e interviniendo el dato 62, fue recien ahi donde se complieron todos los supuestos de forma correcta que era lo que necesitabamos para tener el mejor modelo posible.
 
 Influyentes
 
