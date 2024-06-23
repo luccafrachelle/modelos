@@ -92,6 +92,7 @@ Parece no haber problemas de linealidad en el modelo. Ya que los residuos no pre
 ## Homoscedasticidad
 
 Atípicos
+
 ```{r}
 res <- rstudent(mod)
 yhat <- fitted(mod)
@@ -299,7 +300,6 @@ vif(mod2)
 summary(mod2)
 ```
 
-
 ```{r}
 h_i2 <- influence(mod2)$hat
 D_i2 <- cooks.distance(mod2)
@@ -332,11 +332,13 @@ ggplot(df_influencia2, aes(x = i, y = D_i)) +
 df_influencia2 %>% arrange(desc(D_i)) %>% head(5) %>% pull(i)
 df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
 ```
+
 ```{r}
 shapiro.test(rstudent(mod2))
 jarque.bera.test(na.omit(rstudent(mod2)))
 ks.test(rstudent(mod2), 'pnorm')
 ```
+
 ```{r}
 df = read_excel('./data/datos_presion.xlsx')
 df <- df %>% dplyr::select(-id)
@@ -354,6 +356,7 @@ mod2 <- lm(presion_art ~ .-peso- stress -duracion_hip, data=df)
 ```
 
 Atípicos
+
 ```{r}
 res <- rstudent(mod2)
 yhat <- fitted(mod2)
@@ -373,12 +376,13 @@ shapiro.test(rstudent(mod2))
 jarque.bera.test(na.omit(rstudent(mod2)))
 ks.test(rstudent(mod2), 'pnorm')
 ```
+
 ```{r}
 summary(mod2)#I38 no significativo, pero sin ella no acepto normalidad
 ```
 
-
 Probamos con log(y)
+
 ```{r}
 # df$I62 <- 0
 # df$I62[62] <- 1
@@ -407,5 +411,28 @@ jarque.bera.test(na.omit(rstudent(mod_sin62)))
 ks.test(rstudent(mod_sin62), 'pnorm')#no acepta normalidad
 ```
 
+## Randomizer
+```{r}
+summary(mod_sin62)
+```
 
-## Resultados del modelo final
+```{r}
+mod5 = update(mod_sin62, . ~ . - I38 - I62)
+```
+
+
+
+```{r}
+summary(mod5)
+```
+
+```{r}
+shapiro.test(rstudent(mod5))
+jarque.bera.test(na.omit(rstudent(mod5)))
+ks.test(rstudent(mod5), 'pnorm')
+```
+
+
+
+
+
