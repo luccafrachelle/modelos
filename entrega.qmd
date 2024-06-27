@@ -2,7 +2,7 @@
 title: "Entrega trabajo final modelos lineales"
 format: pdf
 author: "Lucca Frachelle , Valentina Solidni , Cecilia Waksman"
-date: "Sys.Date()"
+date: "`r Sys.Date()`"
 editor: visual
 ---
 
@@ -39,6 +39,8 @@ library(car)
 library(skedastic)
 library(robustbase)
 library(tseries)
+library(knitr)
+
 ```
 
 ```{r}
@@ -50,12 +52,68 @@ df <- df %>% dplyr::select(-id)
 # Análisis exploratorio
 
 ```{r}
-summary(df)
+summary(df) %>% kable()
 ```
+
+Los datos consisten en mediciones de los siguientes parámetros:
+
+-   **Edad**: Varía entre 44 y 56 años, con una mediana de 48 años.
+
+-   **Peso**: Oscila entre 65.3 kg y 84.4 kg, con una media de 75.72 kg.
+
+-   **Superficie Corporal**: Se encuentra entre 1.69 m² y 2.33 m², con una media de 2.019 m².
+
+-   **Duración de la Hipertensión**: Registrada entre 2.5 y 12.8 años, con una mediana de 6.3 años.
+
+-   **Pulso** : Varía de 61 a 80 pulsaciones por minuto, con una media de 69.86 pulsaciones por minuto.
+
+-   **Índice de Estrés**: Mide entre 0 y 100, con una media de 53.05.
+
+-   **Presión Arterial** : Oscila entre 101 mmHg y 129 mmHg, con una media de 114.4 mmHg.
 
 ```{r}
 ggpairs(df)
 ```
+
+### Análisis de Distribución y Correlación
+
+1.  **Distribución de Variables**
+
+    -   **Edad**: La distribución de la edad muestra una concentración alrededor de los 48-50 años.
+
+    -   **Peso**: La distribución del peso es relativamente normal, con una media alrededor de 75 kg.
+
+    -   **Superficie Corporal**: La superficie corporal también sigue una distribución normal, centrada cerca de 2.0 m².
+
+    -   **Duración de la Hipertensión**: La duración de la hipertensión muestra una mayor dispersión, pero con una tendencia hacia valores más bajos.
+
+    -   **Pulso**: El pulso muestra una distribución concentrada entre 65 y 75 pulsaciones por minuto.
+
+    -   **Estrés**: El índice de estrés varía considerablemente, pero con una mayor concentración en valores bajos.
+
+    -   **Presión Arterial**: La presión arterial tiene una distribución aproximadamente normal, centrada alrededor de 115 mmHg.
+
+2.  **Correlaciones Significativas**
+
+    -   **Edad y Peso**: Existe una correlación positiva significativa entre la edad y el peso (corr = 0.339).
+
+    -   **Peso y Superficie Corporal**: La correlación entre el peso y la superficie corporal es muy alta (corr = 0.874), lo cual es esperable ya que ambos parámetros están relacionados físicamente.
+
+    -   **Superficie Corporal y Peso**: Esta correlación refuerza la relación entre estas dos variables (corr = 0.874).
+
+    -   **Duración de la Hipertensión y Edad**: Hay una correlación positiva moderada entre la duración de la hipertensión y la edad (corr = 0.544).
+
+    -   **Pulso y Peso**: La correlación entre el pulso y el peso es positiva y significativa (corr = 0.533).
+
+    -   **Estrés y Peso**: Existe una correlación moderada entre el estrés y el peso (corr = 0.533).
+
+    -   **Presión Arterial y Edad**: La presión arterial está positivamente correlacionada con la edad (corr = 0.486).
+
+    -   **Presión Arterial y Peso**: Hay una correlación significativa entre la presión arterial y el peso (corr = 0.755).
+
+    -   **Presión Arterial y Superficie Corporal**: Existe una correlación positiva entre la presión arterial y la superficie corporal (corr = 0.810).
+
+    -   **Presión Arterial y Pulso**: La correlación entre la presión arterial y el pulso es significativa (corr = 0.533).
 
 ```{r}
 mod = lm(presion_art ~ ., data = df)
@@ -69,7 +127,7 @@ mod = lm(presion_art ~ ., data = df)
 vif(mod)
 ```
 
-Se observa que al hacer el vif la variable que tenía un valor mas alto indicando una alta multicolinealidad era la variable "peso", por esta razón fue que se descidio eliminarla del modelo. Se elimina la variable peso que tiene un el VIF mas alto
+Se observa que al hacer el vif la variable que tenía un valor mas alto indicando una alta multicolinealidad era la variable "peso", por esta razón fue que se descidio eliminarla del modelo. Se elimina la variable peso que tiene un el VIF mas alto. Condice ya que peso estaba fuertementemente correlacionada con la varaible superfice corporal, por lo que tiene sentido que estas dos tengan un vif alto ya que de cierta forma compiten por explicar la misma variablidad.
 
 ```{r}
 mod = update(mod, . ~ . - peso)
@@ -80,7 +138,7 @@ summary(mod)
 vif(mod)
 ```
 
-Todos los VIF son con diferencia menoroes a 5, por lo que no hay multicolinealidad. Se puede seguir con el analisis. Si observamos en el analisis multivariado , la variable peso y superficie corporal tienen una correlacion muy alto, por lo que tiene sentido multicolineanidad en el modelo.
+Todos los VIF son con diferencia menores a 5, por lo que no hay multicolinealidad. Se puede seguir con el analisis.
 
 ## Lineanidad
 
@@ -88,24 +146,11 @@ Todos los VIF son con diferencia menoroes a 5, por lo que no hay multicolinealid
 crPlots(mod)
 ```
 
-Parece no haber problemas de linealidad en el modelo. Ya que los residuos no presentan un patron claro , como dispersión o curvatura a lo largo de los valores de x. Quizas puede llegar a dar problemas la eadad linealindad. Se va a seguir con el analisis sin modificarla esperando que no sea un problema.
+Parece no haber problemas de linealidad en el modelo. Ya que los residuos no presentan un patron claro , como dispersión o curvatura a lo largo de los valores de x.Por lo que se puede seguir con el analisis.
 
 ## Homoscedasticidad
 
 Atípicos
-
-```{r}
-res <- rstudent(mod)
-yhat <- fitted(mod)
-
-which(abs(res)>3)
-
-library(ggplot2)
-ggplot(mod, aes(x=yhat, y= res))+
-  geom_point()+
-  geom_hline(yintercept = -3,color="darkblue")+
-  geom_hline(yintercept = 3,color="darkblue")
-```
 
 ```{r}
 ncvTest(mod)
@@ -115,13 +160,55 @@ ncvTest(mod)
 breusch_pagan(mod)
 ```
 
-Los dos test tienen un p-value mayor a 0.7 por lo que no se rechaza la hipotesis nula. Es decir, no hay evidencia para probar que la varianza de los errores no son iguals. Por ende no hay problemas de homocedasticidad.
+#### **ncvTest**
+
+-   **Hipótesis**:
+
+    -   **Hipótesis Nula (H0)**: La varianza de los residuos es constante (homocedasticidad).
+
+    -   **Hipótesis Alternativa (H1)**: La varianza de los residuos no es constante (heterocedasticidad).
+
+-   **Procedimiento**:
+
+    -   El ncvTest examina la relación entre los valores ajustados (predicciones del modelo) y la varianza de los residuos.
+
+    -   Se ajusta un modelo de regresión para predecir los residuos en función de los valores ajustados.
+
+    -   Se calcula un estadístico de prueba basado en esta relación.
+
+    -   El estadístico de prueba sigue una distribución chi-cuadrado.
+
+    Un p-valor alto sugiere que no hay evidencia suficiente para rechazar la hipótesis nula, indicando homocedasticidad.
+
+    -   Un p-valor bajo indica heterocedasticidad.
+
+#### **Breusch-Pagan Test**
+
+-   **Hipótesis**:
+
+    -   **Hipótesis Nula (H0)**: La varianza de los residuos es constante y no depende de las variables independientes (homocedasticidad).
+
+    -   **Hipótesis Alternativa (H1)**: La varianza de los residuos depende linealmente de las variables independientes (heterocedasticidad).
+
+-   **Procedimiento**:
+
+    -   El test de Breusch-Pagan examina si la varianza de los residuos depende linealmente de las variables independientes del modelo original.
+
+    -   Se realiza una regresión auxiliar de los residuos al cuadrado contra las variables independientes originales.
+
+    -   Se calcula un estadístico de prueba basado en la regresión auxiliar.
+
+    -   El estadístico de prueba sigue una distribución chi-cuadrado.
+
+Como los dos p-values son mas grandes que 0.7 no hay problemas de heteroestaticidad.
 
 ## Normalidad de los residuos
 
 ```{r}
 plot(density(rstudent(mod)))
 ```
+
+Se observa como la desnidad parece normal. Sin embargo las colas no son simetricas. La cola inferior es bastante más pesada que la superior. Lo que puede dar algun indicio de que los resiudos no se distriubuyen normal.
 
 ```{r}
 n <- nrow(df)
@@ -137,6 +224,8 @@ ggplot(qq, aes(x = teoricos, y = empiricos)) +
 
 ```
 
+Un poco de la misma forma se observa como la parte inferior de la cola es la que peor se ajusta a la recta por lo que da indicios de no es del todo normal.
+
 ```{r}
 shapiro.test(rstudent(mod))
 jarque.bera.test(rstudent(mod))#rechazo al 5
@@ -145,6 +234,21 @@ ks.test(rstudent(mod), 'pnorm')
 ```
 
 El test Jarque-Bera tiene un p-value menor que 0.05, por lo que se rechaza la hipotesis nula de que los residuos son normales. Sin embargo, el test de Shapiro-Wilk y el test de Kolmogorov-Smirnov no rechazan la hipotesis nula. Por lo que no se puede afirmar que los residuos no son normales. Se va a intervenir el modelo para ver si se puede mejorar la normalidad de los residuos. Como se menciono anteriormente la variable edad puede no ser lineal, por lo que se va a transformar la variable edad para ver si se puede mejorar la normalidad de los residuos.
+
+## Atípicos
+
+```{r}
+res <- rstudent(mod)
+yhat <- fitted(mod)
+
+which(abs(res)>3)
+
+library(ggplot2)
+ggplot(mod, aes(x=yhat, y= res))+
+  geom_point()+
+  geom_hline(yintercept = -3,color="darkblue")+
+  geom_hline(yintercept = 3,color="darkblue")
+```
 
 ## Presencia de Influyentes
 
@@ -235,7 +339,6 @@ ks.test(rstudent(mod_II), 'pnorm')
 
 Una vez habiendo sacado los df 38, 73, la variable peso e interviniendo el dato 62, fue recien ahi donde se complieron todos los supuestos de forma correcta que era lo que necesitabamos para tener el mejor modelo posible.
 
-
 Tests de significación individual y global
 
 ```{r}
@@ -251,7 +354,6 @@ mod_II2 = update(mod_II, . ~ . - peso - stress -duracion_hip)
 #modelo sin stress y/o duracion_hip no acepta normalidad
 summary(mod_II2)
 ```
-
 
 ```{r}
 shapiro.test(rstudent(mod_II2))
@@ -466,7 +568,6 @@ round(randomize(mod2),6)
 ```
 
 Modelo con variables significativas (rechazo pruebas de significión individual)
-
 
 ## Evaluación del desempeño predictivo del modelo
 
