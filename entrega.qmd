@@ -254,7 +254,16 @@ ggplot(mod, aes(x=yhat, y= res))+
 
 ## Presencia de Influyentes
 
+Para detectar la presencia de influyentes lo que se va a realizár es utilizar dos métodos: Leverage y Distancia de Cook. 
+
+Leverage: Este indicador es útil para determinar la influencia de cada observación sobre los valores ajustados, se esconde en los valores de la diagonal de la matriz H. Los puntos con un alto leverage tienen un potencial mayor para influir en la estimación de los coeficientes del modelo de regresión.Un punto de leverage mayor que 2(k+1)/n, donde k es el número de predictores y n es el número de observaciones, se considera un punto alto de leverage.
+
+Distancia de Cook: Este indicador cuantifica el cambio en el vector de estimaciones luego de remover la i-ésima observación.Di cuantifica el cambio en el vector de valores ajustados.Para determinar si alguna observación tiene una influencia significativa Di>4/n.
+
+Leverage:
+
 ```{r}
+#| echo: false
 h_i <- influence(mod)$hat
 D_i <- cooks.distance(mod)
 df_influencia <- data.frame(i = 1:nrow(df),
@@ -263,6 +272,7 @@ df_influencia <- data.frame(i = 1:nrow(df),
 ```
 
 ```{r}
+#| echo: false
 ggplot(df_influencia, aes(x = i, y = h_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
@@ -272,7 +282,10 @@ ggplot(df_influencia, aes(x = i, y = h_i)) +
   ggtitle('Leverage')
 ```
 
+Se puede observar que por el indicador de Leverage, se puede observar tres precencias de datos influyentes.Estos puntos podrían tener un impacto significativo en los resultados del análisis. En etapass posteriores, se evaluará como manejarlos, ya sea mediante su eliminación o una intervención.
+
 ```{r}
+#| echo: false
 ggplot(df_influencia, aes(x = i, y = D_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
@@ -282,10 +295,15 @@ ggplot(df_influencia, aes(x = i, y = D_i)) +
   ggtitle('Distancia de Cook')
 
 ```
+En este caso, hay más datos influyentes que en el caso de Leverage. Sin embargo, se va a tratar de seguir el mismo enfoque, considerando la eliminación de estos datos o intervenirlos para poder continuar con el analisis.
 
-Intervención de influyentes según Levrage
+
+A continuación, se procederá a intervenir los datos, separandolos según los dos enfoques. Se evaluará cuál de los dos métodos es más conveniente para nuetsro análisis.
+
+Intervención de influyentes según Levrage:
 
 ```{r}
+#| echo: false
 df$I38 <- 0
 df$I38[38] <- 1
 df$I73 <- 0
@@ -295,25 +313,37 @@ vif(mod_I)
 #obs 58 es influyente en ambos gráficos pero aceptamos normalidad si lo quitamos
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| echo: false
 crPlots(mod_I)
 ```
 
 ```{r}
+#| echo: false
 ncvTest(mod_I)
 breusch_pagan(mod_I)
 ```
 
 ```{r}
+#| echo: false
 shapiro.test(rstudent(mod_I))
 jarque.bera.test(na.omit(rstudent(mod_I)))
 ks.test(rstudent(mod_I), 'pnorm')
 
 ```
 
-Interviención de influyentes según distancia de Cook
+Para este caso, se intervinieron los datos 38 y 73, que fueron identificados como influyentes en el gráfico de este indicador. 
+ - Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
+ - Test de Linealidad: Todas las variables siguen una relación lineal adecuada.
+ - Test de Homocedasticidad: Se rechazó la hipótesis nula, con un p-valor de 0.704, indicando que no hay un problema de heterocedasticidad.
+ - Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
+
+
+
+Interviención de influyentes según distancia de Cook:
 
 ```{r}
+#| echo: false
 df$I62 <- 0
 df$I62[62] <- 1
 mod_II <- lm(presion_art ~ . -peso -I38 -I73, data = df)
@@ -321,60 +351,82 @@ vif(mod_II)
 # si se borra intervención de influyentes de Leverage, debemos actualizar nuestro modelo borradno "-I38 -I73".
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| echo: false
 crPlots(mod_II)
 ```
 
 ```{r}
+#| echo: false
 ncvTest(mod_II)
 ```
 
 ```{r}
+#| echo: false
 breusch_pagan(mod_II)
 ```
 
 ```{r}
+#| echo: false
 shapiro.test(rstudent(mod_II))
 jarque.bera.test(na.omit(rstudent(mod_II)))
 ks.test(rstudent(mod_II), 'pnorm')
 ```
+Se realizó el mismo analisis que para el método de Leverage.
+Para este caso, se intervinieron varios datos, pero probando llegamos a la conclución que solo sacando la variable "peso" e interviniendo el dato 62, llegamos a cumplir con todos los supues. 
+ - Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
+ - Test de Linealidad: Todas las variables siguen una relación lineal adecuada.
+ - Test de Homocedasticidad: Se rechazó la hipótesis nula, con un p-valor de 0.82783, indicando que no hay un problema de heterocedasticidad.
+ - Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
 
-Una vez habiendo sacado los df 38, 73, la variable peso e interviniendo el dato 62, fue recien ahi donde se complieron todos los supuestos de forma correcta que era lo que necesitabamos para tener el mejor modelo posible.
 
-Tests de significación individual y global
-
+Tras completar estos dos análisis, se identificó que las variables "duracion_hip" y "stress" no son significativas en el modelo. En consecuancia, se procederá a repetir todo el análisis excluyendo estas dos variables.
+Acontinuación se puede ver como estas dos variables que se menciono anteriormente no son singificativas en el modelo.
 ```{r}
+#| echo: false
 summary(mod_II)
 # Intervención significativa
 # duracion_hip y stress son no significativas
 ```
+Modelo sin variables no significativas:
 
-Modelo sin variables no significativas
+
+Se procedió eliminar las variables no significativas mencionadas anteriormente, "duracion_hip" y "stress" del modelo que creamos anteriormente. Luego, se generó un resumen del modelo para verificar la significancia de las variables restantes.
 
 ```{r}
+#| echo: false
 mod_II2 = update(mod_II, . ~ . - peso - stress -duracion_hip)
 #modelo sin stress y/o duracion_hip no acepta normalidad
 summary(mod_II2)
 ```
 
 ```{r}
+#| echo: false
 shapiro.test(rstudent(mod_II2))
 jarque.bera.test(na.omit(rstudent(mod_II2)))
 ks.test(rstudent(mod_II2), 'pnorm')
 ```
+Se realizó una prueba de Normalidad utilizando los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc. Los resultados indicaron que el p-valor de los métodos Shapiro-Wilj y Jarque-Bera fue inferior al 5%, lo cual sugiere que no se cumple el supuesto de normalidad para los residuos del modelo.
 
-Sin variables no significativas
+Al no lograr cumplir con el este de Normalidad incluso después de eliminar las variables significativas, se pprocedió a crar otro modelo excluyendo esas variables del análisis.
 
 ```{r}
+df = read_excel("datos_presion.xlsx")
+df <- df %>% dplyr::select(-id)
 mod2 <- lm(presion_art~.-peso-stress-duracion_hip, data=df)
+```
+```{r}
+#| echo: false
 vif(mod2)
 ```
 
 ```{r}
+#| echo: false
 summary(mod2)
 ```
 
 ```{r}
+#| echo: false
 h_i2 <- influence(mod2)$hat
 D_i2 <- cooks.distance(mod2)
 df_influencia2 <- data.frame(i = 1:nrow(df),
@@ -383,6 +435,7 @@ df_influencia2 <- data.frame(i = 1:nrow(df),
 ```
 
 ```{r}
+#| echo: false
 ggplot(df_influencia2, aes(x = i, y = h_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
@@ -393,6 +446,7 @@ ggplot(df_influencia2, aes(x = i, y = h_i)) +
 ```
 
 ```{r}
+#| echo: false
 ggplot(df_influencia2, aes(x = i, y = D_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
@@ -403,6 +457,7 @@ ggplot(df_influencia2, aes(x = i, y = D_i)) +
 ```
 
 ```{r}
+#| echo: false
 df_influencia2 %>% arrange(desc(D_i)) %>% head(5) %>% pull(i)
 df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
 ```
@@ -410,6 +465,7 @@ df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
 Atípicos
 
 ```{r}
+#| echo: false
 res <- rstudent(mod2)
 yhat <- fitted(mod2)
 
@@ -427,12 +483,16 @@ ggplot(mod2, aes(x=yhat, y= res))+
 Quitando obs atípica 62
 
 ```{r}
+#| echo: false
 df <- df[-62,]
 mod_sin62 <- lm(presion_art ~ .-peso- stress -duracion_hip , data=df)
 shapiro.test(rstudent(mod_sin62))
 jarque.bera.test(na.omit(rstudent(mod_sin62)))
 ks.test(rstudent(mod_sin62), 'pnorm')#no acepta normalidad
 ```
+Después de repetir todo el procedimiento del analisis, se identificó que el dato 62 era un valor átipico. Se decidió intervenirlo y estudiar nuevamente la normalidad de los residuos utilizando los metodos Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc, como ya se realizo anteriormente. Se observó que solo el método de Kolmogorov-Smirnoc arrojó un p-valor superior al 5%, mientras que los otros dos métodos fueron inferiores a 5%, indicando que no se cumple el supuesto de normalidad.
+
+Debdio a que se utilizaron diversas estrategias para cumplir con el supuesto de normalidad sin éxito, se optó por utilizar el método de Randomize, el cual se describirá en detalle posteriormente.
 
 ## Randomize
 
