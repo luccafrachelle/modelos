@@ -10,7 +10,7 @@ editor: visual
 
 Este trabajo consiste en un análisis de la incidencia de ciertos factores sobre la presión sanguínea en personas hipertensas. Los factores que se tomarán en cuenta para ello son: edad, peso, superficie corporal, duración desde que a la persona le diagnosticaron hipertensión, el pulso en estado basal y un índice de estrés.
 
-Para ello se utilizarán datos de un estudio realizado en una policlínica universitaria y se realizará un modelo de regresión lineal múltiple, dónde la variable de respuesta, Y, es la presión arterial (*presion_art*) y las variables explicativas serán seleccionadas de las nombradas anteriormente (las cuales formarán la matriz X).
+Para ello se utilizarán df de un estudio realizado en una policlínica universitaria y se realizará un modelo de regresión lineal múltiple, dónde la variable de respuesta, Y, es la presión arterial (*presion_art*) y las variables explicativas serán seleccionadas de las nombradas anteriormente (las cuales formarán la matriz X).
 
 El modelo se podrá escribir como $Y=X\beta + \epsilon$, donde $\beta$ es un vector de parámetros a estimar.
 
@@ -42,7 +42,7 @@ library(tseries)
 ```
 
 ```{r}
-df = read_excel('./data/datos_presion.xlsx')
+df = read_excel('./data/df_presion.xlsx')
 df <- df %>% dplyr::select(-id)
 ```
 
@@ -132,7 +132,7 @@ ggplot(qq, aes(x = teoricos, y = empiricos)) +
   geom_point() +
   xlab('Cuantiles teoricos') +
   ylab('Cuantiles empiricos') +
-  geom_abline(slope = 1, intercept = 0, col = 2, size = 1.5)#comparación entre disrtib de los datos y distrib normal
+  geom_abline(slope = 1, intercept = 0, col = 2, size = 1.5)#comparación entre disrtib de los df y distrib normal
 
 ```
 
@@ -232,7 +232,7 @@ jarque.bera.test(na.omit(rstudent(mod_II)))
 ks.test(rstudent(mod_II), 'pnorm')
 ```
 
-Una vez habiendo sacado los datos 38, 73, la variable peso e interviniendo el dato 62, fue recien ahi donde se complieron todos los supuestos de forma correcta que era lo que necesitabamos para tener el mejor modelo posible.
+Una vez habiendo sacado los df 38, 73, la variable peso e interviniendo el dato 62, fue recien ahi donde se complieron todos los supuestos de forma correcta que era lo que necesitabamos para tener el mejor modelo posible.
 
 Influyentes
 
@@ -342,7 +342,7 @@ ks.test(rstudent(mod2), 'pnorm')
 ```
 
 ```{r}
-df = read_excel('./data/datos_presion.xlsx')
+df = read_excel('./data/df_presion.xlsx')
 df <- df %>% dplyr::select(-id)
 
 df$I62 <- 0
@@ -407,18 +407,163 @@ Quitando obs atípica 62
 
 ```{r}
 df <- df[-62,]
-mod_sin62 <- lm(presion_art ~ .-peso- stress -duracion_hip, data=df)
+df$I41 <- 0
+df$I41[41] <- 1
+df$I22 <- 0
+df$I22[22] <- 1
+mod_sin62 <- lm(presion_art ~ .-peso- stress -duracion_hip - , data=df)
 shapiro.test(rstudent(mod_sin62))
 jarque.bera.test(na.omit(rstudent(mod_sin62)))
 ks.test(rstudent(mod_sin62), 'pnorm')#no acepta normalidad
 ```
 
-## Randomizer
+## Randomize
+
 ```{r}
+# aleatoricemos 'P' veces
+P <- 1000
+
+# funcionas auxiliares
+h <- function(y, x, X){
+  # Esta funcion auxiliar 'remueve' el efecto de las columnas
+  # de X en x y en Y
+  if (class(X) != 'matrix') X <- as.matrix(X)
+  H <- X%*%solve(t(X)%*%X)%*%t(X)
+  y1 <- y - y%*%H
+  x1 <- x - x%*%H
+  return(list(ye    = as.numeric(y1),
+              equis = as.numeric(x1)))
+}
+estima <- function(h){
+  # Esta funcion auxiliar estima el parametro de la pendiente
+  # en una RLS que no incluye constante.
+  # Usa como insumo el resultado de la funcion h()
+  sum(h$ye*h$equis)/sum(h$equis^2)
+}
+desvio <- function(h){
+  # Esta funcion auxiliar estima el desvio del estimador de la pendiente
+  # en un modelo de RLS que no incluye la constante.
+  # Usa como insumo el resultado de la funcion h()
+  b <- sum(h$ye*h$equis)/sum(h$equis^2)
+  r <- h$ye - b*h$equis
+  n <- length(h$ye)
+  sqrt((sum(r^2)/(n-1))/sum(h$equis^2))
+}
+```
+
+```{r}
+est <- matrix(NA, P, 3)
+
+for (i in 1:P){
+  # se quita el efecto de las demas variables...
+  h1 <- h(df$presion_art, df$edad, cbind(1,df[,c('sup_corp','pulso')]))
+  h2 <- h(df$presion_art, df$sup_corp, cbind(1,df[,c('edad','pulso')]))
+  h3 <- h(df$presion_art, df$pulso, cbind(1,df[,c('edad','sup_corp')]))
+  
+  # se lleva a cabo la permutacion aleatoria...
+  h1$ye <- sample(h1$ye)
+  h2$ye <- sample(h2$ye)
+  h3$ye <- sample(h3$ye)
+  
+  # estima...
+  b1 <- estima(h1)
+  b2 <- estima(h2)
+  b3 <- estima(h3)
+  
+  # se obtiene el desvio del estimador
+  sb1 <- desvio(h1)
+  sb2 <- desvio(h2)
+  sb3 <- desvio(h3)
+  
+  # y se calcula el estadistico 't'
+  t1 <- b1/sb1
+  t2 <- b1/sb2
+  t3 <- b1/sb3
+  
+  # los almacenamos
+  est[i,] <- c(t1, t2, t3)
+}
+
+# p-valor edad
+hist(est[,1])
+t_1 <- coef(summary(mod2))[2,3]
+abline(v = t_1, col = 2, lwd = 2) #estimación de t student en edad, mod2
+pv1 <- mean(est[,1]>abs(t_1)|est[,1]< -abs(t_1))
+
+# p-valor sup_corp
+hist(est[,2])
+t_2 <- coef(summary(mod2))[3,3]
+abline(v = t_2, col = 2, lwd = 2)
+pv2 <- mean(est[,2]>abs(t_2)|est[,2]< -abs(t_2))
+
+
+# p-valor pulso
+hist(est[,3])
+t_3 <- coef(summary(mod2))[4,3]
+abline(v = t_3, col = 2, lwd = 2)
+pv3 <- mean(est[,3]>abs(t_3)|est[,3]< -abs(t_3))
+```
+
+```{r}
+summary(mod2)
+c(pv1,pv2,pv3)
+```
+
+
+```{r}
+
+# Una funcion que haga todo el trabajo
+randomize <- function(mod, P = 1000){
+  # Esta funcion aproxima los p-valores de las pruebas de significacion
+  # individual mediante 'P' permutaciones aleatorias 
+  t_stat <- coef(summary(mod))[,3]
+  k   <- length(t_stat)
+  est <- matrix(NA, P, k)
+  mm  <- mod$model
+  Y   <- mm[,1]
+  X   <- cbind(1,mm[,-1])
+  
+  for (i in 1:P){
+    tes <- rep(NA, k)
+    for (j in 1:k){
+      # se quita el efecto de las demas variables
+      h1 <- h(Y, X[,j], X[,-j])
+      # se permuta
+      h1$ye <- sample(h1$ye)
+      # se estima el parametro
+      b1 <- estima(h1)
+      # se estima el desvio
+      sb1 <- desvio(h1)
+      # se almacena el estadistic 't'
+      tes[j] <- b1/sb1 
+    }
+    est[i,] <- tes
+  }
+  # se calculan los p-values bilaterales
+  t_stat <- matrix(rep(abs(t_stat), P),nrow = P, byrow = TRUE)
+  pv <- apply(est > t_stat, 2, mean)
+  pv <- pv + apply(est < -t_stat,2,mean)
+  
+  smod <- coef(summary(mod))
+  smod <- cbind(smod, pv)
+  colnames(smod)[5] <- 'Pr(>|t|)_rand'
+  return(smod)
+}
+set.seed(2100)
+round(randomize(mod2),6)
+```
+Modelo con variables significativas (rechazo pruebas de significión individual)
+
+
+## Está mal
+```{r}
+
 summary(mod_sin62)
 ```
 
 ```{r}
+
+
 mod5 = update(mod_sin62, . ~ . - I38 - I62)
 ```
 
@@ -435,6 +580,20 @@ ks.test(rstudent(mod5), 'pnorm')
 ```
 
 
+## Evaluación del desempeño predictivo del modelo
 
+```{r}
+n=nrow(df)
+pred <- rep(NA,n)
 
+for(i in 1:n){
+  df_i <- df[-i,]
+  mod_i <- update(mod2, data = df_i)
+  pred[i] <- predict(mod_i, newdata = df[i,])
+}
 
+#R^2 para las predicciones del Leave one out
+
+R2 <- 1-((sum((df$presion_art - pred)^2))/ (sum((df$presion_art - mean(df$presion_art))^2)))
+R2
+```
