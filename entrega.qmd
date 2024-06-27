@@ -74,7 +74,8 @@ Los datos consisten en mediciones de los siguientes parámetros:
 
 -   **Presión Arterial** : Oscila entre 101 mmHg y 129 mmHg, con una media de 114.4 mmHg.
 
-```{r}
+```{r, fig.cap = "Distribución y Correlación"}
+#| label: fig-plot0 
 #| echo: false
 ggpairs(df)
 ```
@@ -151,8 +152,9 @@ Todos los VIF son con diferencia menores a 5, por lo que no hay multicolinealida
 
 ## Lineanidad
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, fig.cap = "Linealidad"}
 #| echo: false
+#|label: fig-plot0 
 crPlots(mod)
 ```
 
@@ -216,15 +218,22 @@ Como los dos p-values son mas grandes que 0.7 no hay problemas de heteroestatici
 
 ## Normalidad de los residuos
 
-```{r}
+```{r,fig.cap = "Normalidad de los residuos"}
 #| echo: false
+#|label: fig-plot0 
 plot(density(rstudent(mod)))
 ```
 
 Se observa como la desnidad parece normal. Sin embargo las colas no son simetricas. La cola inferior es bastante más pesada que la superior. Lo que puede dar algun indicio de que los resiudos no se distriubuyen normal.
 
-```{r}
+```{r,fig.cap = "Normalidad de los residuos"}
 #| echo: false
+#|label: fig-plot0 
+plot(density(rstudent(mod)))
+```
+```{r, fig.cap = "Comparación de los cuantiles teóricos y empíricos" }
+#| echo: false
+#| label: fig-plot0 
 n <- nrow(df)
 z_i <- qnorm(seq(n)/(n + 1))
 qq <- data.frame(teoricos = z_i,
@@ -236,6 +245,7 @@ ggplot(qq, aes(x = teoricos, y = empiricos)) +
   ylab('Cuantiles empiricos') +
   geom_abline(slope = 1, intercept = 0, col = 2, size = 1.5)#comparación entre disrtib de los df y distrib normal
 
+```
 ```
 
 Un poco de la misma forma se observa como la parte inferior de la cola es la que peor se ajusta a la recta por lo que da indicios de no es del todo normal.
@@ -252,8 +262,9 @@ El test Jarque-Bera tiene un p-value menor que 0.05, por lo que se rechaza la hi
 
 ## Atípicos
 
-```{r}
+```{r, fig.cap =" Valores Atípicos"}
 #| echo: false
+#| label: fig-plot0 
 res <- rstudent(mod)
 yhat <- fitted(mod)
 
@@ -285,8 +296,9 @@ df_influencia <- data.frame(i = 1:nrow(df),
                             D_i = D_i)
 ```
 
-```{r}
+```{r, fig.cap ="Leverage"}
 #| echo: false
+#| label: fig-plot0
 ggplot(df_influencia, aes(x = i, y = h_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
@@ -298,8 +310,9 @@ ggplot(df_influencia, aes(x = i, y = h_i)) +
 
 Se puede observar que por el indicador de Leverage, se puede observar tres precencias de datos influyentes.Estos puntos podrían tener un impacto significativo en los resultados del análisis. En etapass posteriores, se evaluará como manejarlos, ya sea mediante su eliminación o una intervención.
 
-```{r}
+```{r, fig.cap ="Distancia de Cook"}
 #| echo: false
+#| label: fig-plot0
 ggplot(df_influencia, aes(x = i, y = D_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
@@ -307,7 +320,6 @@ ggplot(df_influencia, aes(x = i, y = D_i)) +
   ylab(expression(D[i])) +
   geom_abline(slope = 0, intercept = 4/nrow(df), col = 2, linetype = 'dashed') +
   ggtitle('Distancia de Cook')
-
 ```
 En este caso, hay más datos influyentes que en el caso de Leverage. Sin embargo, se va a tratar de seguir el mismo enfoque, considerando la eliminación de estos datos o intervenirlos para poder continuar con el analisis.
 
@@ -326,8 +338,9 @@ vif(mod_I)
 #obs 58 es influyente en ambos gráficos pero aceptamos normalidad si lo quitamos
 ```
 
-```{r, warning=FALSE}
+```{r, fig.cap ="Linealidad"}
 #| echo: false
+#| label: fig-plot0
 crPlots(mod_I)
 ```
 
@@ -368,10 +381,10 @@ vif(mod_II)
 # si se borra intervención de influyentes de Leverage, debemos actualizar nuestro modelo borradno "-I38 -I73".
 ```
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, fig.cap ="Linealidad"}
 #| echo: false
+#| label: fig-plot0
 crPlots(mod_II)
-```
 
 ```{r}
 #| echo: false
@@ -451,8 +464,9 @@ df_influencia2 <- data.frame(i = 1:nrow(df),
                             D_i = D_i2)
 ```
 
-```{r}
+```{r, warning=FALSE, fig.cap ="Leverage"}
 #| echo: false
+#| label: fig-plot0
 ggplot(df_influencia2, aes(x = i, y = h_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
@@ -462,8 +476,9 @@ ggplot(df_influencia2, aes(x = i, y = h_i)) +
   ggtitle('Leverage')
 ```
 
-```{r}
+```{r, warning=FALSE, fig.cap ="Distancia de Cook"}
 #| echo: false
+#| label: fig-plot0
 ggplot(df_influencia2, aes(x = i, y = D_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
@@ -481,8 +496,9 @@ at_2 <- df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
 
 Atípicos:
 
-```{r}
+```{r, warning=FALSE, fig.cap ="Atípicos"}
 #| echo: false
+#| label: fig-plot0
 res <- rstudent(mod2)
 yhat <- fitted(mod2)
 
