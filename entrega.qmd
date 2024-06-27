@@ -54,6 +54,7 @@ df <- df %>% dplyr::select(-id)
 # Análisis exploratorio
 
 ```{r}
+#| echo: false
 summary(df) %>% kable()
 ```
 
@@ -74,6 +75,7 @@ Los datos consisten en mediciones de los siguientes parámetros:
 -   **Presión Arterial** : Oscila entre 101 mmHg y 129 mmHg, con una media de 114.4 mmHg.
 
 ```{r}
+#| echo: false
 ggpairs(df)
 ```
 
@@ -126,6 +128,7 @@ mod = lm(presion_art ~ ., data = df)
 ## Multicolinealidad
 
 ```{r}
+#| echo: false
 vif(mod)
 ```
 
@@ -133,10 +136,14 @@ Se observa que al hacer el vif la variable que tenía un valor mas alto indicand
 
 ```{r}
 mod = update(mod, . ~ . - peso)
+```
+```{r}
+#| echo: false
 summary(mod)
 ```
 
 ```{r}
+#| echo: false
 vif(mod)
 ```
 
@@ -144,7 +151,8 @@ Todos los VIF son con diferencia menores a 5, por lo que no hay multicolinealida
 
 ## Lineanidad
 
-```{r}
+```{r, warning=FALSE}
+#| echo: false
 crPlots(mod)
 ```
 
@@ -155,10 +163,12 @@ Parece no haber problemas de linealidad en el modelo. Ya que los residuos no pre
 Atípicos
 
 ```{r}
+#| echo: false
 ncvTest(mod)
 ```
 
 ```{r}
+#| echo: false
 breusch_pagan(mod)
 ```
 
@@ -207,12 +217,14 @@ Como los dos p-values son mas grandes que 0.7 no hay problemas de heteroestatici
 ## Normalidad de los residuos
 
 ```{r}
+#| echo: false
 plot(density(rstudent(mod)))
 ```
 
 Se observa como la desnidad parece normal. Sin embargo las colas no son simetricas. La cola inferior es bastante más pesada que la superior. Lo que puede dar algun indicio de que los resiudos no se distriubuyen normal.
 
 ```{r}
+#| echo: false
 n <- nrow(df)
 z_i <- qnorm(seq(n)/(n + 1))
 qq <- data.frame(teoricos = z_i,
@@ -229,6 +241,7 @@ ggplot(qq, aes(x = teoricos, y = empiricos)) +
 Un poco de la misma forma se observa como la parte inferior de la cola es la que peor se ajusta a la recta por lo que da indicios de no es del todo normal.
 
 ```{r}
+#| echo: false
 shapiro.test(rstudent(mod))
 jarque.bera.test(rstudent(mod))#rechazo al 5
 ks.test(rstudent(mod), 'pnorm')
@@ -240,6 +253,7 @@ El test Jarque-Bera tiene un p-value menor que 0.05, por lo que se rechaza la hi
 ## Atípicos
 
 ```{r}
+#| echo: false
 res <- rstudent(mod)
 yhat <- fitted(mod)
 
@@ -296,7 +310,6 @@ ggplot(df_influencia, aes(x = i, y = D_i)) +
 
 ```
 En este caso, hay más datos influyentes que en el caso de Leverage. Sin embargo, se va a tratar de seguir el mismo enfoque, considerando la eliminación de estos datos o intervenirlos para poder continuar con el analisis.
-
 
 A continuación, se procederá a intervenir los datos, separandolos según los dos enfoques. Se evaluará cuál de los dos métodos es más conveniente para nuetsro análisis.
 
@@ -411,7 +424,7 @@ Se realizó una prueba de Normalidad utilizando los métodos de Shapiro-Wilj, Ja
 Al no lograr cumplir con el este de Normalidad incluso después de eliminar las variables significativas, se pprocedió a crar otro modelo excluyendo esas variables del análisis.
 
 ```{r}
-df = read_excel("datos_presion.xlsx")
+df = read_excel('./data/datos_presion.xlsx')
 df <- df %>% dplyr::select(-id)
 mod2 <- lm(presion_art~.-peso-stress-duracion_hip, data=df)
 ```
