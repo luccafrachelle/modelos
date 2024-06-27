@@ -494,7 +494,22 @@ Después de repetir todo el procedimiento del analisis, se identificó que el da
 
 Debdio a que se utilizaron diversas estrategias para cumplir con el supuesto de normalidad sin éxito, se optó por utilizar el método de Randomize, el cual se describirá en detalle posteriormente.
 
-## Randomize
+
+## Randomization Test
+
+Una alternativa al método convencional para la validación de un modelo es el uso de métodos robustos ante el no cumplimiento de ciertos supuestos. En las etapas de diagnóstico anteriormente planteadas se ha rechazado el supuesto de normalidad, por lo que en este apartado se utilizará la *prueba basada en permutaciones* o *randomization test*, método el cual prescinde de dicho supuesto (o cualquier otro supuesto referente a la distribución de los datos).
+
+\
+
+El mismo consiste en extraer P muestras aleatorias con reposición de los datos; como los mismos ya son una muestra, a estas "sub-muestras" las llamamos *réplicas* y son del mismo tamaño que los datos. Posteriormente se particiona el problema en modelos RLS, tantos como variables explicativas hayan, de tal forma que se obtenga una nueva versión de la variable de interés en cada modelo libre del efecto de las demás variables.
+
+Para cada RLS y en cada réplica, se calcula la estimación del parámetro $\hat\beta_j$ correspondiente y su desvío estimado, y en función de los mismos se calcula el estadístico de interés, en este caso el mismo es el estadístico t, siendo este:
+
+$$t=\frac{\hat\beta_j}{\widehat {desvío}}$$
+
+A partir de esta colección de valores de t se aproximará la distribución del estadístico t y se calcula un p-valor como la proporción de valores de la colección de t que pertenecen al rango $(-|t_{obs}|,|t_{obs}|)$ (frente al total de los mismos), siendo $t_{obs}$ el valor del estadístico t obtenido en las prueba de hipótesis individual del método convencional.
+
+Si los p-valores obtenidos en la prueba de permutaciones son similares a los obtenidos en la prueba de hipótesis individual, el modelo es válido, aún sin necesidad de cumplir el supuesto de normalidad.
 
 ```{r}
 # aleatoricemos 'P' veces
@@ -526,64 +541,6 @@ desvio <- function(h){
   n <- length(h$ye)
   sqrt((sum(r^2)/(n-1))/sum(h$equis^2))
 }
-```
-
-```{r}
-est <- matrix(NA, P, 3)
-
-for (i in 1:P){
-  # se quita el efecto de las demas variables...
-  h1 <- h(df$presion_art, df$edad, cbind(1,df[,c('sup_corp','pulso')]))
-  h2 <- h(df$presion_art, df$sup_corp, cbind(1,df[,c('edad','pulso')]))
-  h3 <- h(df$presion_art, df$pulso, cbind(1,df[,c('edad','sup_corp')]))
-  
-  # se lleva a cabo la permutacion aleatoria...
-  h1$ye <- sample(h1$ye)
-  h2$ye <- sample(h2$ye)
-  h3$ye <- sample(h3$ye)
-  
-  # estima...
-  b1 <- estima(h1)
-  b2 <- estima(h2)
-  b3 <- estima(h3)
-  
-  # se obtiene el desvio del estimador
-  sb1 <- desvio(h1)
-  sb2 <- desvio(h2)
-  sb3 <- desvio(h3)
-  
-  # y se calcula el estadistico 't'
-  t1 <- b1/sb1
-  t2 <- b1/sb2
-  t3 <- b1/sb3
-  
-  # los almacenamos
-  est[i,] <- c(t1, t2, t3)
-}
-
-# p-valor edad
-# hist(est[,1])
-t_1 <- coef(summary(mod2))[2,3]
-# abline(v = t_1, col = 2, lwd = 2) #estimación de t student en edad, mod2
-pv1 <- mean(est[,1]>abs(t_1)|est[,1]< -abs(t_1))
-
-# p-valor sup_corp
-#hist(est[,2])
-t_2 <- coef(summary(mod2))[3,3]
-#abline(v = t_2, col = 2, lwd = 2)
-pv2 <- mean(est[,2]>abs(t_2)|est[,2]< -abs(t_2))
-
-
-# p-valor pulso
-#hist(est[,3])
-t_3 <- coef(summary(mod2))[4,3]
-#abline(v = t_3, col = 2, lwd = 2)
-pv3 <- mean(est[,3]>abs(t_3)|est[,3]< -abs(t_3))
-```
-
-```{r}
-summary(mod2)
-c(pv1,pv2,pv3)
 ```
 
 ```{r}
@@ -629,9 +586,20 @@ set.seed(2100)
 round(randomize(mod2),6)
 ```
 
-Modelo con variables significativas (rechazo pruebas de significión individual)
+Al comparar los p-valores de la prueba de significación individual y de la prueba de permutaciones, observamos que los resultadosson relativamente similares, por lo que el modelo es válido aunque sus errores no se distribuyan de forma normal.
+
 
 ## Evaluación del desempeño predictivo del modelo
+
+Para evaluar la actuación del modelo, se debe exponer el mismo a un nuevo conjunto de datos. En este caso, al no contar con otros datos, mas que los que son utilizados para crear el modelo, se acude a métodos de *validación cruzada*, en este caso se usa el método denominado *Leave one out* (LOOCV).
+
+El mismo consiste en quitar una observación del dataset y calcular los coeficientes del modelo con este nuevo subconjunto de datos. Esto se lleva a cabo de manera iterativa con cada una de las observaciones de nuestros datos. En cada iteración se predice además el valor de la variable de respuesta de la observación quitada en función de los valores de las variables explicativas en esta observación y de las nuevas estimaciones de los parámetros del modelo.
+
+Posteriormente se calcula el $R^2$ de los resultados obtenidos por este método, es decir:
+
+$$R^2 = 1- \frac{SCRes}{SCTotal} =1- \frac{\sum_{i=1}^{n}(y_i - \hat{yi})^2}{\sum_{i=1}^{n}(yi - \bar{y})^2}$$
+
+donde SCRes es la suma de los cuadrados de los residuos y SCTotal es la suma de los cuadrados Totales. En nuestros datos y, la variable de respuesta, es presion_ert.
 
 ```{r}
 n=nrow(df)
@@ -650,3 +618,7 @@ R2
 
 summary(mod2)$r.squared
 ```
+
+EL $R^2$ se encuentra por encima del 70%, lo cual permite afirmar que el mismo explica sificientemente bien los datos de la muestra.
+
+Se observa que el $R^2$ por el método LOOCV es un 3,5% más bajo que el $R^2$ de la prueba de significación global. Esto se debe a que el modelo predice mejor los datos con los que fue creado en comparación con datos nuevos; a este efecto se le llama *overfitting*. En nuestro caso el overfitting es relativamente bajo. Podemos afirmar entonces que el modelo es competente en sus predicciones.
