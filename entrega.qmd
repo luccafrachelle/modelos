@@ -270,9 +270,9 @@ ggplot(mod, aes(x=yhat, y= res))+
 
 Para detectar la presencia de influyentes lo que se va a realizár es utilizar dos métodos: Leverage y Distancia de Cook. 
 
-Leverage: Este indicador es útil para determinar la influencia de cada observación sobre los valores ajustados, se esconde en los valores de la diagonal de la matriz H. Los puntos con un alto leverage tienen un potencial mayor para influir en la estimación de los coeficientes del modelo de regresión.Un punto de leverage mayor que 2(k+1)/n, donde k es el número de predictores y n es el número de observaciones, se considera un punto alto de leverage.
+**Leverage:** Este indicador es útil para determinar la influencia de cada observación sobre los valores ajustados, se esconde en los valores de la diagonal de la matriz H. Los puntos con un alto leverage tienen un potencial mayor para influir en la estimación de los coeficientes del modelo de regresión.Un punto de leverage mayor que 2(k+1)/n, donde k es el número de predictores y n es el número de observaciones, se considera un punto alto de leverage.
 
-Distancia de Cook: Este indicador cuantifica el cambio en el vector de estimaciones luego de remover la i-ésima observación.Di cuantifica el cambio en el vector de valores ajustados.Para determinar si alguna observación tiene una influencia significativa Di>4/n.
+**Distancia de Cook:** Este indicador cuantifica el cambio en el vector de estimaciones luego de remover la i-ésima observación.Di cuantifica el cambio en el vector de valores ajustados.Para determinar si alguna observación tiene una influencia significativa Di>4/n.
 
 Leverage:
 
@@ -346,10 +346,14 @@ ks.test(rstudent(mod_I), 'pnorm')
 ```
 
 Para este caso, se intervinieron los datos 38 y 73, que fueron identificados como influyentes en el gráfico de este indicador. 
- - Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
- - Test de Linealidad: Todas las variables siguen una relación lineal adecuada.
- - Test de Homocedasticidad: Se rechazó la hipótesis nula, con un p-valor de 0.704, indicando que no hay un problema de heterocedasticidad.
- - Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
+
+    -   **Test de Multicolinealidad:** Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
+
+    -   **Test de Linealidad:** Todas las variables siguen una relación lineal adecuada.
+
+    -   **Test de Homocedasticidad:** Se rechazó la hipótesis nula, con un p-valor de 0.704, indicando que no hay un problema de heterocedasticidad.
+
+    -   **Test de Normalidad:** Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
 
 
 
@@ -387,10 +391,10 @@ ks.test(rstudent(mod_II), 'pnorm')
 ```
 Se realizó el mismo analisis que para el método de Leverage.
 Para este caso, se intervinieron varios datos, pero probando llegamos a la conclución que solo sacando la variable "peso" e interviniendo el dato 62, llegamos a cumplir con todos los supues. 
- - Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
- - Test de Linealidad: Todas las variables siguen una relación lineal adecuada.
- - Test de Homocedasticidad: Se rechazó la hipótesis nula, con un p-valor de 0.82783, indicando que no hay un problema de heterocedasticidad.
- - Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
+    -   **Test de Multicolinealidad:** Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
+    -   **Test de Linealidad:** Todas las variables siguen una relación lineal adecuada.
+    -   **Test de Homocedasticidad:** Se rechazó la hipótesis nula, con un p-valor de 0.82783, indicando que no hay un problema de heterocedasticidad.
+    -   **Test de Normalidad:** Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
 
 
 Tras completar estos dos análisis, se identificó que las variables "duracion_hip" y "stress" no son significativas en el modelo. En consecuancia, se procederá a repetir todo el análisis excluyendo estas dos variables.
@@ -475,7 +479,7 @@ df_influencia2 %>% arrange(desc(D_i)) %>% head(5) %>% pull(i)
 df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
 ```
 
-Atípicos
+Atípicos:
 
 ```{r}
 #| echo: false
