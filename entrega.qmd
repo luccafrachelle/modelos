@@ -475,8 +475,8 @@ ggplot(df_influencia2, aes(x = i, y = D_i)) +
 
 ```{r}
 #| echo: false
-df_influencia2 %>% arrange(desc(D_i)) %>% head(5) %>% pull(i)
-df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
+at_1 <- df_influencia2 %>% arrange(desc(D_i)) %>% head(5) %>% pull(i)
+at_2 <- df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
 ```
 
 Atípicos:
