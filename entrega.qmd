@@ -42,7 +42,8 @@ library(tseries)
 ```
 
 ```{r}
-df = read_excel('./data/df_presion.xlsx')
+#df <- read_excel("data/datos_presion.xlsx")
+df = read_excel('./data/datos_presion.xlsx')
 df <- df %>% dplyr::select(-id)
 ```
 
@@ -67,8 +68,8 @@ mod = lm(presion_art ~ ., data = df)
 ```{r}
 vif(mod)
 ```
-Se observa que al hacer el vif la variable que tenía un valor mas alto indicando una alta multicolinealidad era la variable "peso", por esta razón fue que se descidio eliminarla del modelo.
-Se elimina la variable peso que tiene un el VIF mas alto
+
+Se observa que al hacer el vif la variable que tenía un valor mas alto indicando una alta multicolinealidad era la variable "peso", por esta razón fue que se descidio eliminarla del modelo. Se elimina la variable peso que tiene un el VIF mas alto
 
 ```{r}
 mod = update(mod, . ~ . - peso)
@@ -234,36 +235,6 @@ ks.test(rstudent(mod_II), 'pnorm')
 
 Una vez habiendo sacado los df 38, 73, la variable peso e interviniendo el dato 62, fue recien ahi donde se complieron todos los supuestos de forma correcta que era lo que necesitabamos para tener el mejor modelo posible.
 
-Influyentes
-
-```{r}
-h_i <- influence(mod_II)$hat
-D_i <- cooks.distance(mod_II)
-df_influencia <- data.frame(i = 1:nrow(df),
-                            h_i = h_i,
-                            D_i = D_i)
-```
-
-```{r}
-ggplot(df_influencia, aes(x = i, y = h_i)) +
-  geom_point() +
-  geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
-  xlab('') +
-  ylab(expression(h[i])) +
-  geom_abline(slope = 0, intercept = 2*length(coefficients(mod))/nrow(df), col = 2, linetype = 'dashed') +
-  ggtitle('Leverage')
-```
-
-```{r}
-ggplot(df_influencia, aes(x = i, y = D_i)) +
-  geom_point() +
-  geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
-  xlab('') +
-  ylab(expression(D[i])) +
-  geom_abline(slope = 0, intercept = 4/nrow(df), col = 2, linetype = 'dashed') +
-  ggtitle('Distancia de Cook')
-
-```
 
 Tests de significación individual y global
 
@@ -276,19 +247,16 @@ summary(mod_II)
 Modelo sin variables no significativas
 
 ```{r}
-mod = update(mod_II, . ~ . - peso - stress -duracion_hip)
+mod_II2 = update(mod_II, . ~ . - peso - stress -duracion_hip)
 #modelo sin stress y/o duracion_hip no acepta normalidad
+summary(mod_II2)
 ```
 
-```{r}
-influyentes <- df_influencia %>%
-  filter(D_i > 4 / nrow(df)) %>% arrange(desc(D_i)) %>% head(1)
-```
 
 ```{r}
-shapiro.test(rstudent(mod))
-jarque.bera.test(na.omit(rstudent(mod)))
-ks.test(rstudent(mod), 'pnorm')
+shapiro.test(rstudent(mod_II2))
+jarque.bera.test(na.omit(rstudent(mod_II2)))
+ks.test(rstudent(mod_II2), 'pnorm')
 ```
 
 Sin variables no significativas
@@ -335,83 +303,28 @@ df_influencia2 %>% arrange(desc(D_i)) %>% head(5) %>% pull(i)
 df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
 ```
 
-```{r}
-shapiro.test(rstudent(mod2))
-jarque.bera.test(na.omit(rstudent(mod2)))
-ks.test(rstudent(mod2), 'pnorm')
-```
-
-```{r}
-df = read_excel('./data/df_presion.xlsx')
-df <- df %>% dplyr::select(-id)
-
-df$I62 <- 0
-df$I62[62] <- 1
-df$I41 <- 0
-df$I41[41] <- 1
-df$I22 <- 0
-df$I22[22] <- 1
-df$I38 <- 0
-df$I38[38] <- 1
-mod2 <- lm(presion_art ~ .-peso- stress -duracion_hip, data=df)
-#Se probó con obs.: 62,58, 41,22, 73,38, 61, 66
-```
-
 Atípicos
 
 ```{r}
 res <- rstudent(mod2)
 yhat <- fitted(mod2)
 
-which(abs(res)>3)
+which(abs(res)>=3)
 
 library(ggplot2)
 ggplot(mod2, aes(x=yhat, y= res))+
   geom_point()+
   geom_hline(yintercept = -3,color="darkblue")+
   geom_hline(yintercept = 3,color="darkblue")
+
 #Obs 62 
-```
-
-```{r}
-shapiro.test(rstudent(mod2))
-jarque.bera.test(na.omit(rstudent(mod2)))
-ks.test(rstudent(mod2), 'pnorm')
-```
-
-```{r}
-summary(mod2)#I38 no significativo, pero sin ella no acepto normalidad
-```
-
-Probamos con log(y)
-
-```{r}
-# df$I62 <- 0
-# df$I62[62] <- 1
-# df$I41 <- 0
-# df$I41[41] <- 1
-# df$I22 <- 0
-# df$I22[22] <- 1
-# df$I38 <- 0
-# df$I38[38] <- 1
-mod3 <- lm(log(presion_art) ~ .-peso- stress -duracion_hip, data=df)
-```
-
-```{r}
-shapiro.test(rstudent(mod3))
-jarque.bera.test(na.omit(rstudent(mod3)))
-ks.test(rstudent(mod3), 'pnorm')#no acepta normalidad
 ```
 
 Quitando obs atípica 62
 
 ```{r}
 df <- df[-62,]
-df$I41 <- 0
-df$I41[41] <- 1
-df$I22 <- 0
-df$I22[22] <- 1
-mod_sin62 <- lm(presion_art ~ .-peso- stress -duracion_hip - , data=df)
+mod_sin62 <- lm(presion_art ~ .-peso- stress -duracion_hip , data=df)
 shapiro.test(rstudent(mod_sin62))
 jarque.bera.test(na.omit(rstudent(mod_sin62)))
 ks.test(rstudent(mod_sin62), 'pnorm')#no acepta normalidad
@@ -485,22 +398,22 @@ for (i in 1:P){
 }
 
 # p-valor edad
-hist(est[,1])
+# hist(est[,1])
 t_1 <- coef(summary(mod2))[2,3]
-abline(v = t_1, col = 2, lwd = 2) #estimación de t student en edad, mod2
+# abline(v = t_1, col = 2, lwd = 2) #estimación de t student en edad, mod2
 pv1 <- mean(est[,1]>abs(t_1)|est[,1]< -abs(t_1))
 
 # p-valor sup_corp
-hist(est[,2])
+#hist(est[,2])
 t_2 <- coef(summary(mod2))[3,3]
-abline(v = t_2, col = 2, lwd = 2)
+#abline(v = t_2, col = 2, lwd = 2)
 pv2 <- mean(est[,2]>abs(t_2)|est[,2]< -abs(t_2))
 
 
 # p-valor pulso
-hist(est[,3])
+#hist(est[,3])
 t_3 <- coef(summary(mod2))[4,3]
-abline(v = t_3, col = 2, lwd = 2)
+#abline(v = t_3, col = 2, lwd = 2)
 pv3 <- mean(est[,3]>abs(t_3)|est[,3]< -abs(t_3))
 ```
 
@@ -508,7 +421,6 @@ pv3 <- mean(est[,3]>abs(t_3)|est[,3]< -abs(t_3))
 summary(mod2)
 c(pv1,pv2,pv3)
 ```
-
 
 ```{r}
 
@@ -552,32 +464,8 @@ randomize <- function(mod, P = 1000){
 set.seed(2100)
 round(randomize(mod2),6)
 ```
+
 Modelo con variables significativas (rechazo pruebas de significión individual)
-
-
-## Está mal
-```{r}
-
-summary(mod_sin62)
-```
-
-```{r}
-
-
-mod5 = update(mod_sin62, . ~ . - I38 - I62)
-```
-
-
-
-```{r}
-summary(mod5)
-```
-
-```{r}
-shapiro.test(rstudent(mod5))
-jarque.bera.test(na.omit(rstudent(mod5)))
-ks.test(rstudent(mod5), 'pnorm')
-```
 
 
 ## Evaluación del desempeño predictivo del modelo
@@ -596,4 +484,6 @@ for(i in 1:n){
 
 R2 <- 1-((sum((df$presion_art - pred)^2))/ (sum((df$presion_art - mean(df$presion_art))^2)))
 R2
+
+summary(mod2)$r.squared
 ```
