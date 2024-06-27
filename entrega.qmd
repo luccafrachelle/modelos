@@ -4,6 +4,7 @@ format: pdf
 author: "Lucca Frachelle , Valentina Solidni , Cecilia Waksman"
 date: "`r Sys.Date()`"
 editor: visual
+echo: false
 ---
 
 # Introducción
@@ -31,7 +32,7 @@ Para poder obtener conclusiones confiables, el modelo debe cumplir con determina
 # Librerias
 
 ```{r}
-#| output: TRUE
+#| output: FALSE
 library(readxl)
 library(tidyverse)
 library(GGally)
@@ -44,6 +45,7 @@ library(knitr)
 ```
 
 ```{r}
+#| output: FALSE
 #df <- read_excel("data/datos_presion.xlsx")
 df = read_excel('./data/datos_presion.xlsx')
 df <- df %>% dplyr::select(-id)
