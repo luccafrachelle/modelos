@@ -45,7 +45,7 @@ library(knitr)
 ```
 
 ```{r}
-#| output: FALSE
+#| output: false
 #df <- read_excel("data/datos_presion.xlsx")
 df = read_excel('./data/datos_presion.xlsx')
 df <- df %>% dplyr::select(-id)
@@ -74,8 +74,7 @@ Los datos consisten en mediciones de los siguientes parámetros:
 
 -   **Presión Arterial** : Oscila entre 101 mmHg y 129 mmHg, con una media de 114.4 mmHg.
 
-```{r, fig.cap = "Distribución y Correlación"}
-#| label: fig-plot0 
+```{r, fig.cap="Distribución y Correlación", label:fig-plot0} 
 #| echo: false
 ggpairs(df)
 ```
@@ -152,9 +151,8 @@ Todos los VIF son con diferencia menores a 5, por lo que no hay multicolinealida
 
 ## Lineanidad
 
-```{r, warning=FALSE, fig.cap = "Linealidad"}
+```{r, warning=FALSE, fig.cap="Linealidad", label:fig-plot1}
 #| echo: false
-#|label: fig-plot0 
 crPlots(mod)
 ```
 
@@ -218,22 +216,19 @@ Como los dos p-values son mas grandes que 0.7 no hay problemas de heteroestatici
 
 ## Normalidad de los residuos
 
-```{r,fig.cap = "Normalidad de los residuos"}
-#| echo: false
-#|label: fig-plot0 
+```{r,fig.cap="Normalidad de los residuos", label:fig-plot2}
+#| echo: false 
 plot(density(rstudent(mod)))
 ```
 
 Se observa como la desnidad parece normal. Sin embargo las colas no son simetricas. La cola inferior es bastante más pesada que la superior. Lo que puede dar algun indicio de que los resiudos no se distriubuyen normal.
 
-```{r,fig.cap = "Normalidad de los residuos"}
+```{r,fig.cap="Normalidad de los residuos", label:fig-plot3}
 #| echo: false
-#|label: fig-plot0 
 plot(density(rstudent(mod)))
 ```
-```{r, fig.cap = "Comparación de los cuantiles teóricos y empíricos" }
-#| echo: false
-#| label: fig-plot0 
+```{r, fig.cap="Comparación de los cuantiles teóricos y empíricos", label:fig-plot4}
+#| echo: false 
 n <- nrow(df)
 z_i <- qnorm(seq(n)/(n + 1))
 qq <- data.frame(teoricos = z_i,
@@ -262,9 +257,8 @@ El test Jarque-Bera tiene un p-value menor que 0.05, por lo que se rechaza la hi
 
 ## Atípicos
 
-```{r, fig.cap =" Valores Atípicos"}
+```{r, fig.cap=" Valores Atípicos", label:fig-plot5 }
 #| echo: false
-#| label: fig-plot0 
 res <- rstudent(mod)
 yhat <- fitted(mod)
 
@@ -296,9 +290,8 @@ df_influencia <- data.frame(i = 1:nrow(df),
                             D_i = D_i)
 ```
 
-```{r, fig.cap ="Leverage"}
+```{r, fig.cap="Leverage", label:fig-plot6}
 #| echo: false
-#| label: fig-plot0
 ggplot(df_influencia, aes(x = i, y = h_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
@@ -310,9 +303,8 @@ ggplot(df_influencia, aes(x = i, y = h_i)) +
 
 Se puede observar que por el indicador de Leverage, se puede observar tres precencias de datos influyentes.Estos puntos podrían tener un impacto significativo en los resultados del análisis. En etapass posteriores, se evaluará como manejarlos, ya sea mediante su eliminación o una intervención.
 
-```{r, fig.cap ="Distancia de Cook"}
+```{r, fig.cap="Distancia de Cook", label:fig-plot7}
 #| echo: false
-#| label: fig-plot0
 ggplot(df_influencia, aes(x = i, y = D_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
@@ -338,9 +330,8 @@ vif(mod_I)
 #obs 58 es influyente en ambos gráficos pero aceptamos normalidad si lo quitamos
 ```
 
-```{r, fig.cap ="Linealidad"}
+```{r, fig.cap="Linealidad", label:fig-plot8}
 #| echo: false
-#| label: fig-plot0
 crPlots(mod_I)
 ```
 
@@ -381,9 +372,8 @@ vif(mod_II)
 # si se borra intervención de influyentes de Leverage, debemos actualizar nuestro modelo borradno "-I38 -I73".
 ```
 
-```{r, warning=FALSE, fig.cap ="Linealidad"}
+```{r, warning=FALSE, fig.cap="Linealidad", label:fig-plot9}
 #| echo: false
-#| label: fig-plot0
 crPlots(mod_II)
 
 ```{r}
@@ -464,9 +454,8 @@ df_influencia2 <- data.frame(i = 1:nrow(df),
                             D_i = D_i2)
 ```
 
-```{r, warning=FALSE, fig.cap ="Leverage"}
+```{r, warning=FALSE, fig.cap="Leverage", label: fig-plot10}
 #| echo: false
-#| label: fig-plot0
 ggplot(df_influencia2, aes(x = i, y = h_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = h_i)) +
@@ -476,9 +465,8 @@ ggplot(df_influencia2, aes(x = i, y = h_i)) +
   ggtitle('Leverage')
 ```
 
-```{r, warning=FALSE, fig.cap ="Distancia de Cook"}
+```{r, warning=FALSE, fig.cap="Distancia de Cook", label:fig-plot11}
 #| echo: false
-#| label: fig-plot0
 ggplot(df_influencia2, aes(x = i, y = D_i)) +
   geom_point() +
   geom_segment(aes(x = i, xend = i, y = 0, yend = D_i)) +
@@ -496,9 +484,8 @@ at_2 <- df_influencia2 %>% arrange(desc(h_i)) %>% head(5) %>% pull(i)
 
 Atípicos:
 
-```{r, warning=FALSE, fig.cap ="Atípicos"}
+```{r, warning=FALSE, fig.cap="Atípicos", label:fig-plot12}
 #| echo: false
-#| label: fig-plot0
 res <- rstudent(mod2)
 yhat <- fitted(mod2)
 
@@ -545,6 +532,7 @@ A partir de esta colección de valores de t se aproximará la distribución del 
 Si los p-valores obtenidos en la prueba de permutaciones son similares a los obtenidos en la prueba de hipótesis individual, el modelo es válido, aún sin necesidad de cumplir el supuesto de normalidad.
 
 ```{r}
+#| echo: false
 # aleatoricemos 'P' veces
 P <- 1000
 
@@ -577,7 +565,7 @@ desvio <- function(h){
 ```
 
 ```{r}
-
+#| echo: false
 # Una funcion que haga todo el trabajo
 randomize <- function(mod, P = 1000){
   # Esta funcion aproxima los p-valores de las pruebas de significacion
