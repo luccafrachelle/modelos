@@ -1,0 +1,52 @@
+---
+title: "referencias"
+author: "Cecilia Waksman"
+date: "2024-06-28"
+output: pdf_document
+bibliography: [bib_entregaML.bib]
+nocite: '@*'
+---
+
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+.
+\newpage
+
+
+
+# Referencias
+
+\
+
+<div id="refs"></div>
