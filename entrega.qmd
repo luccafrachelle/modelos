@@ -644,3 +644,8 @@ summary(mod2)$r.squared
 EL $R^2$ se encuentra por encima del 70%, lo cual permite afirmar que el mismo explica sificientemente bien los datos de la muestra.
 
 Se observa que el $R^2$ por el método LOOCV es un 3,5% más bajo que el $R^2$ de la prueba de significación global. Esto se debe a que el modelo predice mejor los datos con los que fue creado en comparación con datos nuevos; a este efecto se le llama *overfitting*. En nuestro caso el overfitting es relativamente bajo. Podemos afirmar entonces que el modelo es competente en sus predicciones.
+
+## Conclusión:
+
+Para finalizar se puede concluir que el modélo de regresión lineal multiple proporciona una buena representación de la relación entre las variables eplicativas y la variable de respuesta (presión arterial). Luego de pasasr ciertos desafíos con la normalidad de los residuos, se ha confirmado que el modelo es fiable y tiene un buen desempeño predictivo. Por lo tanto, se puede decir que el mdoelo es adecuado para el propósito del análisis y puede ser utilizado para predecir la presión arterial basadas en las variables incluidas en el estudio.
+
