@@ -623,6 +623,7 @@ $$R^2 = 1- \frac{SCRes}{SCTotal} =1- \frac{\sum_{i=1}^{n}(y_i - \hat{yi})^2}{\su
 donde SCRes es la suma de los cuadrados de los residuos y SCTotal es la suma de los cuadrados Totales. En nuestros datos y, la variable de respuesta, es presion_ert.
 
 ```{r}
+#| echo: false
 n=nrow(df)
 pred <- rep(NA,n)
 
