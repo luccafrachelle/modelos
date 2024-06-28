@@ -241,7 +241,7 @@ ggplot(qq, aes(x = teoricos, y = empiricos)) +
   geom_abline(slope = 1, intercept = 0, col = 2, size = 1.5)#comparación entre disrtib de los df y distrib normal
 
 ```
-```
+
 
 Un poco de la misma forma se observa como la parte inferior de la cola es la que peor se ajusta a la recta por lo que da indicios de no es del todo normal.
 
