@@ -351,13 +351,13 @@ ks.test(rstudent(mod_I), 'pnorm')
 
 Para este caso, se intervinieron los datos 38 y 73, que fueron identificados como influyentes en el gráfico de este indicador. 
 
-    -   **Test de Multicolinealidad:** Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
+-   Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
 
-    -   **Test de Linealidad:** Todas las variables siguen una relación lineal adecuada.
+-   Test de Linealidad: Todas las variables siguen una relación lineal adecuada.
 
-    -   **Test de Homocedasticidad:** Se rechazó la hipótesis nula, con un p-valor de 0.704, indicando que no hay un problema de heterocedasticidad.
+-   Test de Homocedasticidad: Se rechazó la hipótesis nula, con un p-valor de 0.704, indicando que no hay un problema de heterocedasticidad.
 
-    -   **Test de Normalidad:** Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
+-   Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
 
 
 
@@ -394,10 +394,10 @@ ks.test(rstudent(mod_II), 'pnorm')
 ```
 Se realizó el mismo analisis que para el método de Leverage.
 Para este caso, se intervinieron varios datos, pero probando llegamos a la conclución que solo sacando la variable "peso" e interviniendo el dato 62, llegamos a cumplir con todos los supues. 
-    -   **Test de Multicolinealidad:** Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
-    -   **Test de Linealidad:** Todas las variables siguen una relación lineal adecuada.
-    -   **Test de Homocedasticidad:** Se rechazó la hipótesis nula, con un p-valor de 0.82783, indicando que no hay un problema de heterocedasticidad.
-    -   **Test de Normalidad:** Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
+-   Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
+-   Test de Linealidad: Todas las variables siguen una relación lineal adecuada.
+-   Test de Homocedasticidad: Se rechazó la hipótesis nula, con un p-valor de 0.82783, indicando que no hay un problema de heterocedasticidad.
+-   Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
 
 
 Tras completar estos dos análisis, se identificó que las variables "duracion_hip" y "stress" no son significativas en el modelo. En consecuancia, se procederá a repetir todo el análisis excluyendo estas dos variables.
