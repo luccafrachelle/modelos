@@ -227,7 +227,7 @@ Se observa como la desnidad parece normal. Sin embargo las colas no son simetric
 #| echo: false
 plot(density(rstudent(mod)))
 ```
-```{r, fig.cap="Comparación de los cuantiles teóricos y empíricos", label:fig-plot4}
+```{r, warning=FALSE, fig.cap="Comparación de los cuantiles teóricos y empíricos", label:fig-plot4}
 #| echo: false 
 n <- nrow(df)
 z_i <- qnorm(seq(n)/(n + 1))
