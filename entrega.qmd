@@ -375,7 +375,7 @@ vif(mod_II)
 ```{r, warning=FALSE, fig.cap="Linealidad", label:fig-plot9}
 #| echo: false
 crPlots(mod_II)
-
+```
 ```{r}
 #| echo: false
 ncvTest(mod_II)
