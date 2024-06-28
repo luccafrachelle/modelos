@@ -19,15 +19,15 @@ El modelo se podrá escribir como $Y=X\beta + \epsilon$, donde $\beta$ es un vec
 
 Para poder obtener conclusiones confiables, el modelo debe cumplir con determinados supuestos
 
--   no multicolinealidad: exacta ni aproximada, para asegurar que la matriz X sea de rango completo (conformable),
+-   **No multicolinealidad**: exacta ni aproximada, para asegurar que la matriz X sea de rango completo (conformable),
 
--   linealidad: la relación entre variables expicativas y la respuesta debe ser aproximadamente lineal,
+-   **Linealidad**: la relación entre variables expicativas y la respuesta debe ser aproximadamente lineal,
 
--   homoscedasticidad: la varianza de los errores no depende de ninguna de las variables explicativas,
+-   **Homoscedasticidad**: la varianza de los errores no depende de ninguna de las variables explicativas,
 
--   normalidad: los errores del modelo deben presentar una distribución normal,
+-   **Normalidad**: los errores del modelo deben presentar una distribución normal,
 
--   atípicos/influyentes: si bien no es un supuesto en si mismo, es recomendable identificar observaciones atípicas e influyentes al modelo.
+-   **Atípicos/Influyentes**: si bien no es un supuesto en si mismo, es recomendable identificar observaciones atípicas e influyentes al modelo.
 
 # Librerias
 
@@ -74,7 +74,7 @@ Los datos consisten en mediciones de los siguientes parámetros:
 
 -   **Presión Arterial** : Oscila entre 101 mmHg y 129 mmHg, con una media de 114.4 mmHg.
 
-```{r, fig.cap="Distribución y Correlación", label:fig-plot0} 
+```{r, fig.cap="Distribución y Correlación", label:fig-plot0}
 #| echo: false
 ggpairs(df)
 ```
@@ -137,6 +137,7 @@ Se observa que al hacer el vif la variable que tenía un valor mas alto indicand
 ```{r}
 mod = update(mod, . ~ . - peso)
 ```
+
 ```{r}
 #| echo: false
 summary(mod)
@@ -227,6 +228,7 @@ Se observa como la desnidad parece normal. Sin embargo las colas no son simetric
 #| echo: false
 plot(density(rstudent(mod)))
 ```
+
 ```{r, warning=FALSE, fig.cap="Comparación de los cuantiles teóricos y empíricos", label:fig-plot4}
 #| echo: false 
 n <- nrow(df)
@@ -241,7 +243,6 @@ ggplot(qq, aes(x = teoricos, y = empiricos)) +
   geom_abline(slope = 1, intercept = 0, col = 2, size = 1.5)#comparación entre disrtib de los df y distrib normal
 
 ```
-
 
 Un poco de la misma forma se observa como la parte inferior de la cola es la que peor se ajusta a la recta por lo que da indicios de no es del todo normal.
 
@@ -273,11 +274,11 @@ ggplot(mod, aes(x=yhat, y= res))+
 
 ## Presencia de Influyentes
 
-Para detectar la presencia de influyentes lo que se va a realizár es utilizar dos métodos: Leverage y Distancia de Cook. 
+Para detectar la presencia de influyentes lo que se va a realizár es utilizar dos métodos: Leverage y Distancia de Cook.
 
 **Leverage:** Este indicador es útil para determinar la influencia de cada observación sobre los valores ajustados, se esconde en los valores de la diagonal de la matriz H. Los puntos con un alto leverage tienen un potencial mayor para influir en la estimación de los coeficientes del modelo de regresión.Un punto de leverage mayor que 2(k+1)/n, donde k es el número de predictores y n es el número de observaciones, se considera un punto alto de leverage.
 
-**Distancia de Cook:** Este indicador cuantifica el cambio en el vector de estimaciones luego de remover la i-ésima observación.Di cuantifica el cambio en el vector de valores ajustados.Para determinar si alguna observación tiene una influencia significativa Di>4/n.
+**Distancia de Cook:** Este indicador cuantifica el cambio en el vector de estimaciones luego de remover la i-ésima observación.Di cuantifica el cambio en el vector de valores ajustados.Para determinar si alguna observación tiene una influencia significativa Di\>4/n.
 
 Leverage:
 
@@ -313,6 +314,7 @@ ggplot(df_influencia, aes(x = i, y = D_i)) +
   geom_abline(slope = 0, intercept = 4/nrow(df), col = 2, linetype = 'dashed') +
   ggtitle('Distancia de Cook')
 ```
+
 En este caso, hay más datos influyentes que en el caso de Leverage. Sin embargo, se va a tratar de seguir el mismo enfoque, considerando la eliminación de estos datos o intervenirlos para poder continuar con el analisis.
 
 A continuación, se procederá a intervenir los datos, separandolos según los dos enfoques. Se evaluará cuál de los dos métodos es más conveniente para nuetsro análisis.
@@ -349,7 +351,7 @@ ks.test(rstudent(mod_I), 'pnorm')
 
 ```
 
-Para este caso, se intervinieron los datos 38 y 73, que fueron identificados como influyentes en el gráfico de este indicador. 
+Para este caso, se intervinieron los datos 38 y 73, que fueron identificados como influyentes en el gráfico de este indicador.
 
 -   Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
 
@@ -358,8 +360,6 @@ Para este caso, se intervinieron los datos 38 y 73, que fueron identificados com
 -   Test de Homocedasticidad: Se rechazó la hipótesis nula, con un p-valor de 0.704, indicando que no hay un problema de heterocedasticidad.
 
 -   Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
-
-
 
 Interviención de influyentes según distancia de Cook:
 
@@ -376,6 +376,7 @@ vif(mod_II)
 #| echo: false
 crPlots(mod_II)
 ```
+
 ```{r}
 #| echo: false
 ncvTest(mod_II)
@@ -392,24 +393,19 @@ shapiro.test(rstudent(mod_II))
 jarque.bera.test(na.omit(rstudent(mod_II)))
 ks.test(rstudent(mod_II), 'pnorm')
 ```
-Se realizó el mismo analisis que para el método de Leverage.
-Para este caso, se intervinieron varios datos, pero probando llegamos a la conclución que solo sacando la variable "peso" e interviniendo el dato 62, llegamos a cumplir con todos los supues. 
--   Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
--   Test de Linealidad: Todas las variables siguen una relación lineal adecuada.
--   Test de Homocedasticidad: Se rechazó la hipótesis nula, con un p-valor de 0.82783, indicando que no hay un problema de heterocedasticidad.
--   Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
 
+Se realizó el mismo analisis que para el método de Leverage. Para este caso, se intervinieron varios datos, pero probando llegamos a la conclución que solo sacando la variable "peso" e interviniendo el dato 62, llegamos a cumplir con todos los supues. - Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa. - Test de Linealidad: Todas las variables siguen una relación lineal adecuada. - Test de Homocedasticidad: Se rechazó la hipótesis nula, con un p-valor de 0.82783, indicando que no hay un problema de heterocedasticidad. - Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se scepta la normalidad.
 
-Tras completar estos dos análisis, se identificó que las variables "duracion_hip" y "stress" no son significativas en el modelo. En consecuancia, se procederá a repetir todo el análisis excluyendo estas dos variables.
-Acontinuación se puede ver como estas dos variables que se menciono anteriormente no son singificativas en el modelo.
+Tras completar estos dos análisis, se identificó que las variables "duracion_hip" y "stress" no son significativas en el modelo. En consecuancia, se procederá a repetir todo el análisis excluyendo estas dos variables. Acontinuación se puede ver como estas dos variables que se menciono anteriormente no son singificativas en el modelo.
+
 ```{r}
 #| echo: false
 summary(mod_II)
 # Intervención significativa
 # duracion_hip y stress son no significativas
 ```
-Modelo sin variables no significativas:
 
+Modelo sin variables no significativas:
 
 Se procedió eliminar las variables no significativas mencionadas anteriormente, "duracion_hip" y "stress" del modelo que creamos anteriormente. Luego, se generó un resumen del modelo para verificar la significancia de las variables restantes.
 
@@ -426,6 +422,7 @@ shapiro.test(rstudent(mod_II2))
 jarque.bera.test(na.omit(rstudent(mod_II2)))
 ks.test(rstudent(mod_II2), 'pnorm')
 ```
+
 Se realizó una prueba de Normalidad utilizando los métodos de Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc. Los resultados indicaron que el p-valor de los métodos Shapiro-Wilj y Jarque-Bera fue inferior al 5%, lo cual sugiere que no se cumple el supuesto de normalidad para los residuos del modelo.
 
 Al no lograr cumplir con el este de Normalidad incluso después de eliminar las variables significativas, se pprocedió a crar otro modelo excluyendo esas variables del análisis.
@@ -435,6 +432,7 @@ df = read_excel('./data/datos_presion.xlsx')
 df <- df %>% dplyr::select(-id)
 mod2 <- lm(presion_art~.-peso-stress-duracion_hip, data=df)
 ```
+
 ```{r}
 #| echo: false
 vif(mod2)
@@ -510,10 +508,10 @@ shapiro.test(rstudent(mod_sin62))
 jarque.bera.test(na.omit(rstudent(mod_sin62)))
 ks.test(rstudent(mod_sin62), 'pnorm')#no acepta normalidad
 ```
+
 Después de repetir todo el procedimiento del analisis, se identificó que el dato 62 era un valor átipico. Se decidió intervenirlo y estudiar nuevamente la normalidad de los residuos utilizando los metodos Shapiro-Wilj, Jarque-Bera y Kolmogorov-Smirnoc, como ya se realizo anteriormente. Se observó que solo el método de Kolmogorov-Smirnoc arrojó un p-valor superior al 5%, mientras que los otros dos métodos fueron inferiores a 5%, indicando que no se cumple el supuesto de normalidad.
 
 Debdio a que se utilizaron diversas estrategias para cumplir con el supuesto de normalidad sin éxito, se optó por utilizar el método de Randomize, el cual se describirá en detalle posteriormente.
-
 
 ## Randomization Test
 
@@ -608,7 +606,6 @@ round(randomize(mod2),6)
 ```
 
 Al comparar los p-valores de la prueba de significación individual y de la prueba de permutaciones, observamos que los resultadosson relativamente similares, por lo que el modelo es válido aunque sus errores no se distribuyan de forma normal.
-
 
 ## Evaluación del desempeño predictivo del modelo
 
