@@ -23,12 +23,11 @@ Para poder obtener conclusiones confiables, el modelo debe cumplir con determina
 
 -   **Linealidad**: la relación entre variables expicativas y la respuesta debe ser aproximadamente lineal,
 
--   **Homoscedasticidad**: la varianza de los errores no depende de ninguna de las variables explicativas,
+-   **Homocedasticidad**: la varianza de los errores no depende de ninguna de las variables explicativas,
 
 -   **Normalidad**: los errores del modelo deben presentar una distribución normal,
 
 -   **Atípicos/Influyentes**: si bien no es un supuesto en si mismo, es recomendable identificar observaciones atípicas e influyentes al modelo.
-
 
 ```{r}
 #| output: FALSE
@@ -165,14 +164,13 @@ crPlots(mod)
 
 Parece no haber problemas de linealidad en el modelo. Ya que los residuos no presentan un patrón claro , como dispersión o curvatura a lo largo de los valores de x. Por lo que se puede seguir con el análisis.
 
-## Homoscedasticidad
-
+## Homocedasticidad
 
 **ncvTest**
 
 -   **Hipótesis**:
 
-    -   **Hipótesis Nula (H0)**: La varianza de los residuos es constante (homoscedasticidad).
+    -   **Hipótesis Nula (H0)**: La varianza de los residuos es constante (Homocedasticidad).
 
     -   **Hipótesis Alternativa (H1)**: La varianza de los residuos no es constante (heterocedasticidad).
 
@@ -186,10 +184,10 @@ Parece no haber problemas de linealidad en el modelo. Ya que los residuos no pre
 
     -   El estadístico de prueba sigue una distribución chi-cuadrado.
 
-    Un p-valor alto sugiere que no hay evidencia suficiente para rechazar la hipótesis nula, indicando homoscedasticidad.
+    Un p-valor alto sugiere que no hay evidencia suficiente para rechazar la hipótesis nula, indicando Homocedasticidad.
 
     -   Un p-valor bajo indica heteroscedasticidad.
-    
+
 ```{r}
 #| echo: false
 ncvTest(mod)
@@ -199,7 +197,7 @@ ncvTest(mod)
 
 -   **Hipótesis**:
 
-    -   **Hipótesis Nula (H0)**: La varianza de los residuos es constante y no depende de las variables independientes (homoscedasticidad).
+    -   **Hipótesis Nula (H0)**: La varianza de los residuos es constante y no depende de las variables independientes (Homocedasticidad).
 
     -   **Hipótesis Alternativa (H1)**: La varianza de los residuos depende linealmente de las variables independientes (heteroscedasticidad).
 
@@ -212,11 +210,10 @@ ncvTest(mod)
     -   Se calcula un estadístico de prueba basado en la regresión auxiliar.
 
     -   El estadístico de prueba sigue una distribución chi-cuadrado.
-    
+
 ```{r, message=FALSE}
 breusch_pagan(mod) %>% kable()
 ```
-
 
 Ambos p-valores son suficientemente altos, por lo que no hay problemas de heteroestaticidad.
 
@@ -233,7 +230,6 @@ ggplot()+geom_density(aes(rstudent(mod)))+
 ```
 
 A priori, la densidad de los residuos estudentizados parece comportarse normal. Sin embargo, las colas no son totalmente simétricas. Esto puede dar indicios de que los resiudos no se distriubuyen normal.
-
 
 ```{r, warning=FALSE, fig.cap="Comparación de los cuantiles teóricos y empíricos", label:fig-plot3, fig.dim=c(5,2.7)}
 #| echo: false 
@@ -254,12 +250,11 @@ Nuevamente, el gráfico refuerza la idea de que existe una asimetría en los ext
 
 \newpage
 
-- **Shaphiro-Wilk**: se basa en la comparación de los cuantiles empíricos y teóricos bajo el supuesto de normalidad.
+-   **Shaphiro-Wilk**: se basa en la comparación de los cuantiles empíricos y teóricos bajo el supuesto de normalidad.
 
-- **Jarque-Bera**: se basa en la comparación de los estadísticos de asimetría y kurtosis bajo el supuesto de normalidad.
+-   **Jarque-Bera**: se basa en la comparación de los estadísticos de asimetría y kurtosis bajo el supuesto de normalidad.
 
-- **Kolmogorov-Smirnov**: se basa en la máxima discrepacnoa entre la función de distribución empírica y la teórica bajo el supuesto de normalidad.
-
+-   **Kolmogorov-Smirnov**: se basa en la máxima discrepacnoa entre la función de distribución empírica y la teórica bajo el supuesto de normalidad.
 
 ```{r}
 #| echo: false
@@ -270,7 +265,6 @@ ks.test(rstudent(mod), 'pnorm')
 ```
 
 El test Jarque-Bera tiene un p-valor menor que 0.05, por lo que se rechaza la hipótesis nula,los residuos se distribuyen normal. Sin embargo, el test de Shapiro-Wilk y el test de Kolmogorov-Smirnov no rechazan la hipótesis nula. Por lo que no se puede afirmar que los residuos no son normales.
-
 
 ## Datos Atípicos
 
@@ -418,19 +412,17 @@ jarque.bera.test(na.omit(rstudent(mod_II)))
 ks.test(rstudent(mod_II), 'pnorm')
 ```
 
-Se realizó el mismo análisis, pero según la Distancia de Cook. Para este caso, se intervinieron varios datos y finalmente se llegó a la conclusión que únicamente interviniendo el dato 62 se cumple con todos los supuestos. 
+Se realizó el mismo análisis, pero según la Distancia de Cook. Para este caso, se intervinieron varios datos y finalmente se llegó a la conclusión que únicamente interviniendo el dato 62 se cumple con todos los supuestos.
 
-- Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
+-   Test de Multicolinealidad: Los valores de VIF fueron todos inferiores a 5, indicando ausencia de multicolinealidad significativa.
 
-- Test de Linealidad: Todas las variables siguen una relación lineal adecuada. 
+-   Test de Linealidad: Todas las variables siguen una relación lineal adecuada.
 
-- Test de Homocedasticidad: No se rechaza la hipótesis nula, con un p-valor de 0.82783, indicando que no hay un problema de heterocedasticidad. 
+-   Test de Homocedasticidad: No se rechaza la hipótesis nula, con un p-valor de 0.82783, indicando que no hay un problema de heterocedasticidad.
 
-- Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilk, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se asepta la normalidad.
-
+-   Test de Normalidad: Se utilizaron los métodos de Shapiro-Wilk, Jarque-Bera y Kolmogorov-Smirnoc para evaluar normalidad en los residuos. Los tres métodos dan un p-valor mayor a 5% por lo tanto se asepta la normalidad.
 
 Como solo es necesario intervenir una observación, la cual a su vez anteriormente se identificó como dato atípico, preferimos este modelo al creado interviniendo según Leverage.
-
 
 ```{r}
 #| echo: false
@@ -542,8 +534,6 @@ which(abs(res)>=3)[[1]]
 
 #Obs 62 
 ```
-
-
 
 ```{r}
 #| echo: false
@@ -688,10 +678,10 @@ for(i in 1:n){
 
 #R^2 para las predicciones del Leave one out
 
-R2_rand <- 1-((sum((df$presion_art - pred)^2))/ (sum((df$presion_art - mean(df$presion_art))^2)))
+R2_LOO <- 1-((sum((df$presion_art - pred)^2))/ (sum((df$presion_art - mean(df$presion_art))^2)))
 R2_conv <- summary(mod2)$r.squared
  
-kable(cbind(R2_conv, R2_rand))
+kable(cbind(R2_conv, R2_LOO))
 
 ```
 
@@ -702,4 +692,3 @@ Se observa que el $R^2$ por el método LOOCV es un 3,5% más bajo que el $R^2$ d
 # Conclusión:
 
 Para finalizar se puede concluir que el modelo de regresión lineal multiple proporciona una buena representación de la relación entre las variables eplicativas y la variable de respuesta (presión arterial). Luego de pasar ciertos desafíos con la normalidad de los residuos, se ha confirmado que el modelo es fiable y tiene un buen desempeño predictivo. Por lo tanto, se puede decir que el mismo es adecuado para el propósito del análisis y puede ser utilizado para predecir la presión arterial basado en las variables edad, superficie corporal y pulso incluidas en el estudio.
-
